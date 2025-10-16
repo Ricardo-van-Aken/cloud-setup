@@ -25,7 +25,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
 
       # GitHub organization PAT used for creating the GitHub repository and adding repository variables.
-      TF_VAR_github_token: ${{ secrets.REPO_CREATION_TOKEN }}
+      TF_VAR_github_repo_token: ${{ secrets.03_GITHUB_TOKEN_PAT }}
+      # Github organization PAT used for adding organization variables/secrets.
 
       # GitHub repository variables, added when creating the github repository through terraform in 03-github-foundation-repo.yml
       TF_VAR_repository_name: ${{ vars.REPOSITORY_NAME }}

@@ -25,7 +25,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
 
       # GitHub organisation PAT used for , CRUD on the github organisation variables and secrets.
-      TF_VAR_github_token: ${{ secrets.02_GITHUB_TOKEN_PAT }}
+      TF_VAR_github_org_token: ${{ secrets.02_GITHUB_TOKEN_PAT }}
 
       # GitHub organisation variables, added when managing the github organisation through terraform in 02-github-organisation.yml
       TF_VAR_github_organisation: ${{ vars.ORGANISATION_NAME }}
