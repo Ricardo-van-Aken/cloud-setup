@@ -14,16 +14,16 @@ jobs:
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
       TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
       AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
 
-      # Terraforms DigitalOcean provider authorization.
+      # Terraforms Github provider authorization
+      TF_VAR_github_organization: ${{ vars.ORGANIZATION_NAME }}
+
+      # Secrets to be added by the terraform to the github repository variables/secrets.
       TF_VAR_do_token: ${{ secrets.STEP_01_DO_TOKEN }}
-
-      # DigitalOcean project configuration.
-      TF_VAR_project_name: ${{ vars.DO_organization_PROJECT_NAME }}
-      TF_VAR_project_description: ${{ vars.DO_organization_PROJECT_DESCRIPTION }}
-      TF_VAR_project_purpose: ${{ vars.DO_organization_PROJECT_PURPOSE }}
-      TF_VAR_project_environment: ${{ vars.DO_organization_PROJECT_ENVIRONMENT }}
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_VARS_TOKEN }}
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_CREATE_REPO_TOKEN }}
+      TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
 
     steps:
       - name: Checkout

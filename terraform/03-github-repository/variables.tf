@@ -1,50 +1,7 @@
-variable "github_repo_token" {
-  description = "GitHub Personal Access Token for creating the github repository"
-  type        = string
-  sensitive   = true
-}
+###############################
+##   Remote State Bucket     ##
+###############################
 
-variable "repository_name" {
-  description = "Name of the repository"
-  type        = string
-  default     = "cloud-setup.foundation"
-}
-
-variable "repository_description" {
-  description = "Description of the repository"
-  type        = string
-  default     = "This repository provisions the organization-wide platform foundation used by all projects and CI/CD pipelines. It bootstraps remote Terraform state, configures the GitHub organization, and deploys shared cloud resources such as a Vault."
-}
-
-variable "repository_visibility" {
-  description = "Repository visibility (public, private, internal)"
-  type        = string
-  default     = "private"
-  validation {
-    condition     = contains(["public", "private", "internal"], var.repository_visibility)
-    error_message = "Repository visibility must be one of: public, private, internal."
-  }
-}
-
-variable "template_owner" {
-  description = "Owner of the template repository"
-  type        = string
-  default     = "Ricardo-van-Aken"
-}
-
-variable "template_repository" {
-  description = "Name of the template repository"
-  type        = string
-  default     = "cloud-setup.foundation"
-}
-
-variable "is_template" {
-  description = "Whether to make this repository a template repository"
-  type        = bool
-  default     = false
-}
-
-# DigitalOcean spaces variables for connecting to the remote state bucket created in 01-digitalocean-remote-state
 variable "region" {
   description = "DigitalOcean remote state bucket region."
   type        = string
@@ -55,9 +12,55 @@ variable "bucket_name" {
   type        = string
 }
 
-# GitHub organization PAT from step 02-github-organisation, to be added to the repository secrets.
-variable "github_org_token" {
-  description = "GitHub Personal Access Token from step 02-github-organisation"
+################################
+##   Provider Authorization   ##
+################################
+
+variable "github_repo_token" {
+  description = "GitHub Personal Access Token for creating the github repository"
   type        = string
   sensitive   = true
+}
+variable "github_organization" {
+  description = "Name of the GitHub organization"
+  type        = string
+}
+
+###############################
+##   Repository Settings    ##
+###############################
+
+variable "repository_name" {
+  description = "Name of the repository"
+  type        = string
+  default     = "cloud-setup.foundation"
+}
+variable "repository_description" {
+  description = "Description of the repository"
+  type        = string
+  default     = "This repository provisions the organization-wide platform foundation used by all projects and CI/CD pipelines. It bootstraps remote Terraform state, configures the GitHub organization, and deploys shared cloud resources such as a Vault."
+}
+variable "repository_visibility" {
+  description = "Repository visibility (public, private, internal)"
+  type        = string
+  default     = "private"
+  validation {
+    condition     = contains(["public", "private", "internal"], var.repository_visibility)
+    error_message = "Repository visibility must be one of: public, private, internal."
+  }
+}
+variable "template_owner" {
+  description = "Owner of the template repository"
+  type        = string
+  default     = "Ricardo-van-Aken"
+}
+variable "template_repository" {
+  description = "Name of the template repository"
+  type        = string
+  default     = "cloud-setup.foundation"
+}
+variable "is_template" {
+  description = "Whether to make this repository a template repository"
+  type        = bool
+  default     = false
 }

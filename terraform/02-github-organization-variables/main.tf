@@ -13,7 +13,7 @@ terraform {
 # GitHub provider configuration
 provider "github" {
   token = var.github_org_token
-  owner = var.github_organisation
+  owner = var.github_organization
 }
 
 # Read outputs from the DigitalOcean foundation state stored in Spaces
@@ -50,10 +50,10 @@ resource "github_actions_organization_secret" "spaces_secret_key_ci" {
 }
 
 # Organization variables
-resource "github_actions_organization_variable" "organisation_name" {
-  variable_name = "ORGANISATION_NAME"
+resource "github_actions_organization_variable" "organization_name" {
+  variable_name = "organization_NAME"
   visibility      = "private"
-  value           = var.github_organisation
+  value           = var.github_organization
 }
 # Expose DigitalOcean Spaces bucket name and region as a GitHub organization variable
 resource "github_actions_organization_variable" "do_bucket_name" {

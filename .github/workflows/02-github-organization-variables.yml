@@ -1,12 +1,16 @@
-name: foundation-01-remote-state
+name: foundation-02-github-organization-variables
 
 on:
   workflow_dispatch:
+  # workflow_run:
+  #   workflows: ["foundation-01-remote-state"]
+  #   types: [completed]
 
 jobs:
   apply:
     runs-on: ubuntu-latest
     environment: production
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
     permissions:
       contents: read
     env:
@@ -14,16 +18,11 @@ jobs:
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
       TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
       AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
 
-      # Terraforms DigitalOcean provider authorization.
-      TF_VAR_do_token: ${{ secrets.STEP_01_DO_TOKEN }}
-
-      # DigitalOcean project configuration.
-      TF_VAR_project_name: ${{ vars.DO_organization_PROJECT_NAME }}
-      TF_VAR_project_description: ${{ vars.DO_organization_PROJECT_DESCRIPTION }}
-      TF_VAR_project_purpose: ${{ vars.DO_organization_PROJECT_PURPOSE }}
-      TF_VAR_project_environment: ${{ vars.DO_organization_PROJECT_ENVIRONMENT }}
+      # Terraforms Github provider authorization
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_VARS_TOKEN }}
+      TF_VAR_github_organization: ${{ vars.organization_NAME }}
 
     steps:
       - name: Checkout
@@ -34,10 +33,9 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Apply remote state stack
-        working-directory: terraform/01-digitalocean-remote-state
+      - name: Apply GitHub organization stack
+        working-directory: terraform/02-github-organization
         run: |
           chmod +x ./apply.sh
           ./apply.sh
-
 

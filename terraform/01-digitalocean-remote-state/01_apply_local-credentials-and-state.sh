@@ -21,6 +21,9 @@ if [[ -f ${BACKEND_FILE} ]]; then mv "${BACKEND_FILE}" "${BACKEND_FILE}.disabled
 load_env "${ROOT_DIR}/../.env"
 if ! terraform init; then
     echo "[WARNING] Terraform init with local state failed."
+    # Ensure backend file is present(since we disabled it earlier)
+    BACKEND_FILE="backend.tf"
+    if [[ -f ${BACKEND_FILE}.disabled ]]; then mv "${BACKEND_FILE}.disabled" "${BACKEND_FILE}"; fi
     exit 1
 else
     echo "[INFO] Terraform init with local state successful."
@@ -39,6 +42,9 @@ case "${CONFIRM}" in
     ;;
     *)
         echo "[INFO] Aborting by user choice."
+        # Ensure backend file is present(since we disabled it earlier)
+        BACKEND_FILE="backend.tf"
+        if [[ -f ${BACKEND_FILE}.disabled ]]; then mv "${BACKEND_FILE}.disabled" "${BACKEND_FILE}"; fi
         exit 0
     ;;
 esac

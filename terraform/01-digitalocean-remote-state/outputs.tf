@@ -1,6 +1,6 @@
 output "project_id" {
   value       = module.project.project_id
-  description = "Project ID created, used by other stages for organisational resources."
+  description = "Project ID created, used by other stages for organizational resources."
 }
 
 output "space_name" {
@@ -32,7 +32,7 @@ output "bucket_spaces_secret_key_ci" {
   description = "Bucket-specific Spaces secret key for remote state backend (CI/CD usage)."
 }
 
-# Expose input variables for use by other stacks
+# Expose input variables for later use by other stacks through remote state.
 output "project_name" {
   value       = var.project_name
   description = "Project name used in this stack."

@@ -1,10 +1,10 @@
-name: foundation-03-github-foundation-repo
+name: foundation-03-github-repository
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["foundation-02-github-organisation"]
-    types: [completed]
+  # workflow_run:
+  #   workflows: ["foundation-02-github-organization-variables"]
+  #   types: [completed]
 
 jobs:
   apply:
@@ -14,21 +14,16 @@ jobs:
     permissions:
       contents: read
     env:
-      # DigitalOcean Spaces bucket name, used for access to spaces 'remote state' bucket for terraform. Added when creating the github
-      # repository through terraform in 03-github-foundation-repo.yml
+      # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
       TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
-
-      # AWS variables, used for access to spaces 'remote state' bucket for terraform. Added when creating the github
-      # repository through terraform in 03-github-foundation-repo.yml
       AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
 
-      # GitHub organization PAT used for creating the GitHub repository and adding repository variables.
-      TF_VAR_github_repo_token: ${{ secrets.03_GITHUB_TOKEN_PAT }}
-      # Github organization PAT used for adding organization variables/secrets.
+      # Terraforms Github provider authorization
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_CREATE_REPO_TOKEN }}
 
-      # GitHub repository variables, added when creating the github repository through terraform in 03-github-foundation-repo.yml
+      # Github repository configuration.
       TF_VAR_repository_name: ${{ vars.REPOSITORY_NAME }}
       TF_VAR_repository_description: ${{ vars.REPOSITORY_DESCRIPTION }}
       TF_VAR_repository_visibility: ${{ vars.REPOSITORY_VISIBILITY }}

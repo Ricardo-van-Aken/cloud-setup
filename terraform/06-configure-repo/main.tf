@@ -15,7 +15,7 @@ data "terraform_remote_state" "github_org" {
       s3 = "https://${var.region}.digitaloceanspaces.com"
     }
     bucket                      = "${var.bucket_name}"
-    key                         = "foundation/02-github-organisation/terraform.tfstate"
+    key                         = "foundation/02-github-organization/terraform.tfstate"
     region                      = "us-east-1"
     skip_credentials_validation = true
     skip_requesting_account_id  = true
