@@ -95,16 +95,6 @@ resource "github_actions_variable" "do_project_environment" {
   value       = data.terraform_remote_state._01.outputs.project_environment
 }
 
-# resource "github_actions_variable" "do_region" {
-#   repository  = data.terraform_remote_state._03.outputs.repository_name
-#   variable_name = "DO_STATE_BUCKET_REGION"
-#   value       = var.region
-# }
-# resource "github_actions_variable" "do_bucket_name" {
-#   repository  = data.terraform_remote_state._03.outputs.repository_name
-#   variable_name = "DO_STATE_BUCKET_NAME"
-#   value       = data.terraform_remote_state._01.outputs.bucket_name
-# }
 
 resource "github_actions_secret" "do_token" {
   repository  = data.terraform_remote_state._03.outputs.repository_name
@@ -112,13 +102,16 @@ resource "github_actions_secret" "do_token" {
   plaintext_value = var.do_token
 }
 
+# Overwrite some private variables from the 02-github-organization-variables step, in case your github plan does not
+# support this feature. You can remove this part if you are using a github plan that supports private environment
+# variables in the organization.
+resource "github_actions_secret" "spaces_secret_key_ci" {
+  repository  = data.terraform_remote_state._03.outputs.repository_name
+  secret_name = "DO_SPACES_SECRET_KEY_CI"
+  plaintext_value = data.terraform_remote_state._01.outputs.bucket_spaces_secret_key_ci
+}
+
 # 02-github-organization variables/secrets.
-# resource "github_actions_variable" "github_organization" {
-#   repository  = data.terraform_remote_state._03.outputs.repository_name
-#   variable_name = "ORGANIZATION_NAME"
-#   value       = data.terraform_remote_state._02.outputs.github_organization
-# }
-#
 resource "github_actions_secret" "github_org_vars_token" {
   repository  = data.terraform_remote_state._03.outputs.repository_name
   secret_name = "_GITHUB_ORG_VARS_TOKEN"
