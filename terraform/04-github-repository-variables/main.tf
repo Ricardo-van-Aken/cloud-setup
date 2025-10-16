@@ -74,11 +74,6 @@ provider "github" {
 # be retrieved from the local environment, since these should be kept out of the state.
 
 # 01-digitalocean-remote-state variables/secrets.
-resource "github_actions_variable" "do_region" {
-  repository  = data.terraform_remote_state._03.outputs.repository_name
-  variable_name = "DO_REGION"
-  value       = var.region
-}
 resource "github_actions_variable" "do_project_name" {
   repository  = data.terraform_remote_state._03.outputs.repository_name
   variable_name = "DO_organization_PROJECT_NAME"
@@ -99,7 +94,18 @@ resource "github_actions_variable" "do_project_environment" {
   variable_name = "DO_organization_PROJECT_ENVIRONMENT"
   value       = data.terraform_remote_state._01.outputs.project_environment
 }
-#
+
+resource "github_actions_variable" "do_region" {
+  repository  = data.terraform_remote_state._03.outputs.repository_name
+  variable_name = "DO_STATE_BUCKET_REGION"
+  value       = var.region
+}
+resource "github_actions_variable" "do_bucket_name" {
+  repository  = data.terraform_remote_state._03.outputs.repository_name
+  variable_name = "DO_STATE_BUCKET_NAME"
+  value       = data.terraform_remote_state._01.outputs.bucket_name
+}
+
 resource "github_actions_secret" "do_token" {
   repository  = data.terraform_remote_state._03.outputs.repository_name
   secret_name = "STEP_01_DO_TOKEN"
