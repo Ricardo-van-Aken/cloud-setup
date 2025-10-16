@@ -40,8 +40,22 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Apply foundation repo stack
-        working-directory: terraform/03-github-foundation-repo
+      - name: Generate Backend Configuration
+        working-directory: terraform/03-github-repository
         run: |
-          chmod +x ./apply.sh
-          ./apply.sh
+          # Source the common script
+          source ../../scripts/common.sh
+          # Generate backend.hcl using the common function
+          generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
+
+      - name: Terraform Init
+        working-directory: terraform/03-github-repository
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/03-github-repository/terraform.tfstate"
+
+      - name: Terraform Plan
+        working-directory: terraform/03-github-repository
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: terraform/03-github-repository
+        run: terraform apply tfplan
