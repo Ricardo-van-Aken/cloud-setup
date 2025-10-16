@@ -9,8 +9,25 @@ terraform {
   backend "s3" {}
 }
 
-# Read the 02-github-organization step inputs from its remote state
-data "terraform_remote_state" "github_organisation" {
+data "terraform_remote_state" "_01" {
+  backend = "s3"
+  config = {
+    endpoints = {
+      s3 = "https://${var.region}.digitaloceanspaces.com"
+    }
+    bucket                      = "${var.bucket_name}"
+    key                         = "foundation/01-digitalocean-remote-state/terraform.tfstate"
+    region                      = "us-east-1"
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_s3_checksum            = true
+    use_lockfile                = true
+  }
+}
+
+data "terraform_remote_state" "_02" {
   backend = "s3"
   config = {
     endpoints = {
@@ -28,10 +45,9 @@ data "terraform_remote_state" "github_organisation" {
   }
 }
 
-# Configure the GitHub provider with the same organization as the 02-github-organization step
 provider "github" {
   token = var.github_repo_token
-  owner = data.terraform_remote_state.github_organisation.outputs.github_organisation
+  owner = data.terraform_remote_state._02.outputs.github_organisation
 }
 
 # Create the GitHub repository
@@ -48,54 +64,52 @@ resource "github_repository" "foundation" {
   }
 }
 
-# Add the organization name from the 02-github-organization step as a GitHub repository variable
-resource "github_actions_variable" "github_organization" {
+
+# Move local environment variables used for each step to the github repo variables so re-runs can be done through
+# ci runners. Stored variables are either retrieved from state or from the local environment, while secrets will only
+# be retrieved from the local environment, since these should be kept out of the state.
+
+# 01-digitalocean-remote-state variables/secrets.
+resource "github_actions_variable" "do_region" {
   repository  = github_repository.foundation.name
-  variable_name = "ORGANIZATION_NAME"
-  value       = data.terraform_remote_state.github_organisation.outputs.github_organisation
-}
-
-
-# Read the 01-digitalocean-remote-state step inputs from its remote state, and add them as GitHub repository variables
-data "terraform_remote_state" "do_foundation" {
-  backend = "s3"
-  config = {
-    endpoints = {
-      s3 = "https://${var.region}.digitaloceanspaces.com"
-    }
-    bucket                      = "${var.bucket_name}"
-    key                         = "foundation/01-digitalocean-remote-state/terraform.tfstate"
-    region                      = "us-east-1"
-    skip_credentials_validation = true
-    skip_requesting_account_id  = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-    skip_s3_checksum            = true
-    use_lockfile                = true
-  }
+  variable_name = "DO_REGION"
+  value       = var.region
 }
 resource "github_actions_variable" "do_project_name" {
   repository  = github_repository.foundation.name
   variable_name = "DO_ORGANISATION_PROJECT_NAME"
-  value       = data.terraform_remote_state.do_foundation.outputs.project_name
+  value       = data.terraform_remote_state._01.outputs.project_name
 }
 resource "github_actions_variable" "do_project_description" {
   repository  = github_repository.foundation.name
   variable_name = "DO_ORGANISATION_PROJECT_DESCRIPTION"
-  value       = data.terraform_remote_state.do_foundation.outputs.project_description
+  value       = data.terraform_remote_state._01.outputs.project_description
 }
 resource "github_actions_variable" "do_project_purpose" {
   repository  = github_repository.foundation.name
   variable_name = "DO_ORGANISATION_PROJECT_PURPOSE"
-  value       = data.terraform_remote_state.do_foundation.outputs.project_purpose
+  value       = data.terraform_remote_state._01.outputs.project_purpose
 }
 resource "github_actions_variable" "do_project_environment" {
   repository  = github_repository.foundation.name
   variable_name = "DO_ORGANISATION_PROJECT_ENVIRONMENT"
-  value       = data.terraform_remote_state.do_foundation.outputs.project_environment
+  value       = data.terraform_remote_state._01.outputs.project_environment
 }
 
-# Add this step's(03-github-foundation-repo) input variables as GitHub repository variables
+# 02-github-organization variables/secrets.
+resource "github_actions_variable" "github_organization" {
+  repository  = github_repository.foundation.name
+  variable_name = "ORGANIZATION_NAME"
+  value       = data.terraform_remote_state._02.outputs.github_organisation
+}
+
+resource "github_actions_secret" "github_organisation_token" {
+  repository  = github_repository.foundation.name
+  secret_name = "STEP_02_GITHUB_TOKEN"
+  plaintext_value = var.github_org_token
+}
+
+# 03-github-foundation-repo.
 resource "github_actions_variable" "repository_name" {
   repository  = github_repository.foundation.name
   variable_name = "REPOSITORY_NAME"
@@ -125,4 +139,10 @@ resource "github_actions_variable" "is_template" {
   repository  = github_repository.foundation.name
   variable_name = "IS_TEMPLATE"
   value       = var.is_template
+}
+
+resource "github_actions_secret" "github_repo_token" {
+  repository  = github_repository.foundation.name
+  secret_name = "STEP_03_GITHUB_TOKEN"
+  plaintext_value = var.github_repo_token
 }

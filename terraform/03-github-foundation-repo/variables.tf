@@ -1,17 +1,17 @@
 variable "github_repo_token" {
-  description = "GitHub Personal Access Token"
+  description = "GitHub Personal Access Token for creating the github repository"
   type        = string
   sensitive   = true
 }
 
 variable "repository_name" {
-  description = "Name of the foundation repository"
+  description = "Name of the repository"
   type        = string
   default     = "cloud-setup.foundation"
 }
 
 variable "repository_description" {
-  description = "Description of the foundation repository"
+  description = "Description of the repository"
   type        = string
   default     = "This repository provisions the organization-wide platform foundation used by all projects and CI/CD pipelines. It bootstraps remote Terraform state, configures the GitHub organization, and deploys shared cloud resources such as a Vault."
 }
@@ -53,4 +53,11 @@ variable "region" {
 variable "bucket_name" {
   description = "DigitalOcean remote state bucket name."
   type        = string
+}
+
+# GitHub organization PAT from step 02-github-organisation, to be added to the repository secrets.
+variable "github_org_token" {
+  description = "GitHub Personal Access Token from step 02-github-organisation"
+  type        = string
+  sensitive   = true
 }
