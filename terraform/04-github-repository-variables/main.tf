@@ -95,16 +95,16 @@ resource "github_actions_variable" "do_project_environment" {
   value       = data.terraform_remote_state._01.outputs.project_environment
 }
 
-resource "github_actions_variable" "do_region" {
-  repository  = data.terraform_remote_state._03.outputs.repository_name
-  variable_name = "DO_STATE_BUCKET_REGION"
-  value       = var.region
-}
-resource "github_actions_variable" "do_bucket_name" {
-  repository  = data.terraform_remote_state._03.outputs.repository_name
-  variable_name = "DO_STATE_BUCKET_NAME"
-  value       = data.terraform_remote_state._01.outputs.bucket_name
-}
+# resource "github_actions_variable" "do_region" {
+#   repository  = data.terraform_remote_state._03.outputs.repository_name
+#   variable_name = "DO_STATE_BUCKET_REGION"
+#   value       = var.region
+# }
+# resource "github_actions_variable" "do_bucket_name" {
+#   repository  = data.terraform_remote_state._03.outputs.repository_name
+#   variable_name = "DO_STATE_BUCKET_NAME"
+#   value       = data.terraform_remote_state._01.outputs.bucket_name
+# }
 
 resource "github_actions_secret" "do_token" {
   repository  = data.terraform_remote_state._03.outputs.repository_name
@@ -113,11 +113,11 @@ resource "github_actions_secret" "do_token" {
 }
 
 # 02-github-organization variables/secrets.
-resource "github_actions_variable" "github_organization" {
-  repository  = data.terraform_remote_state._03.outputs.repository_name
-  variable_name = "ORGANIZATION_NAME"
-  value       = data.terraform_remote_state._02.outputs.github_organization
-}
+# resource "github_actions_variable" "github_organization" {
+#   repository  = data.terraform_remote_state._03.outputs.repository_name
+#   variable_name = "ORGANIZATION_NAME"
+#   value       = data.terraform_remote_state._02.outputs.github_organization
+# }
 #
 resource "github_actions_secret" "github_org_vars_token" {
   repository  = data.terraform_remote_state._03.outputs.repository_name

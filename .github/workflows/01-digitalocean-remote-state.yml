@@ -44,7 +44,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/01-digitalocean-remote-state
-        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/01-digitalocean-remote-state/terraform.tfstate"
+        run: terraform init -backend-config="../backend.hcl" -backend-config="key=foundation/01-digitalocean-remote-state/terraform.tfstate"
 
       - name: Terraform Plan
         working-directory: terraform/01-digitalocean-remote-state
