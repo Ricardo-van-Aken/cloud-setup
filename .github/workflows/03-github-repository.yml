@@ -2,9 +2,6 @@ name: foundation-03-github-repository
 
 on:
   workflow_dispatch:
-  # workflow_run:
-  #   workflows: ["foundation-02-github-organization-variables"]
-  #   types: [completed]
 
 jobs:
   apply:

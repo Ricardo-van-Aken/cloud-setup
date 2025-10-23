@@ -2,9 +2,6 @@ name: foundation-02-github-organization-variables
 
 on:
   workflow_dispatch:
-  # workflow_run:
-  #   workflows: ["foundation-01-remote-state"]
-  #   types: [completed]
 
 jobs:
   apply:

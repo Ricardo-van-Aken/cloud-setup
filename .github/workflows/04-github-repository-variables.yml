@@ -1,4 +1,4 @@
-name: foundation-01-remote-state
+name: foundation-04-github-repository-variables
 
 on:
   workflow_dispatch:

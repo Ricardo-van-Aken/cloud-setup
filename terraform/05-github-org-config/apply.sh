@@ -20,5 +20,5 @@ SHARED_BACKEND_HCL="${ROOT_DIR}/../backend.hcl"
 generate_backend_file "${TF_VAR_region}" "${TF_VAR_bucket_name}" "${SHARED_BACKEND_HCL}"
 
 # Standard init/plan/show/apply
-STATE_KEY="foundation/04-setup-production-branch/terraform.tfstate"
+STATE_KEY="foundation/05-github-org-config/terraform.tfstate"
 terraform_deploy "${SHARED_BACKEND_HCL}" "${STATE_KEY}"

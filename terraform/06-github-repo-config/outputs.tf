@@ -5,7 +5,7 @@ output "production_branch_name" {
 
 output "production_environment_name" {
   description = "Name of the production environment"
-  value       = github_repository_environment.production.environment
+  value       = github_repository_environment.env["production"].environment
 }
 
 output "branch_protection_id" {
@@ -13,7 +13,7 @@ output "branch_protection_id" {
   value       = github_branch_protection.production.id
 }
 
-output "environment_protection_rules" {
-  description = "Protection rules for the production environment"
-  value       = github_repository_environment.production.protection_rules
+output "environment_reviewers" {
+  description = "Reviewers for the production environment"
+  value       = github_repository_environment.env["production"].reviewers
 }

@@ -3,8 +3,12 @@ variable "repository_name" {
   type        = string
 }
 
+variable "github_organization" {
+  description = "Name of the GitHub organization"
+  type        = string
+}
 
-variable "github_token" {
+variable "github_repo_config_token" {
   description = "GitHub token for authentication"
   type        = string
   sensitive   = true
