@@ -39,7 +39,7 @@ data "terraform_remote_state" "do_foundation" {
 # Expose DigitalOcean Spaces CI credentials as GitHub Organization secrets
 resource "github_actions_organization_variable" "spaces_access_key_ci" {
   variable_name     = "DO_SPACES_ACCESS_KEY_CI"
-  visibility      = "private"
+  visibility      = "all"
   value = data.terraform_remote_state.do_foundation.outputs.bucket_spaces_access_key_ci
 }
 
@@ -52,17 +52,17 @@ resource "github_actions_organization_secret" "spaces_secret_key_ci" {
 # Organization variables
 resource "github_actions_organization_variable" "organization_name" {
   variable_name = "organization_NAME"
-  visibility      = "private"
+  visibility      = "all"
   value           = var.github_organization
 }
 # Expose DigitalOcean Spaces bucket name and region as a GitHub organization variable
 resource "github_actions_organization_variable" "do_bucket_name" {
   variable_name = "DO_STATE_BUCKET_NAME"
-  visibility      = "private"
+  visibility      = "all"
   value       = data.terraform_remote_state.do_foundation.outputs.bucket_name
 }
 resource "github_actions_organization_variable" "do_bucket_region" {
   variable_name = "DO_STATE_BUCKET_REGION"
-  visibility      = "private"
+  visibility      = "all"
   value       = data.terraform_remote_state.do_foundation.outputs.region
 }

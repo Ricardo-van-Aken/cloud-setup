@@ -5,6 +5,12 @@ terraform {
       version = "~> 5.0"
     }
   }
+  backend "s3" {}
+}
+
+provider "github" {
+  token = var.github_org_config_token
+  owner = var.github_organization
 }
 
 # Create DevOps team
