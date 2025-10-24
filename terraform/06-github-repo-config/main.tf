@@ -77,7 +77,7 @@ resource "github_branch_protection" "main" {
 
   required_status_checks {
     strict   = true
-    contexts = ["ci"]
+    contexts = ["tests"]
   }
 
   enforce_admins = true
@@ -96,7 +96,7 @@ resource "github_branch_protection" "staging" {
 
   required_status_checks {
     strict   = true
-    contexts = ["ci"]
+    contexts = ["tests"]
   }
 
   enforce_admins = true
@@ -117,7 +117,7 @@ resource "github_branch_protection" "production" {
 
   required_status_checks {
     strict   = true
-    contexts = ["ci"]
+    contexts = ["tests"]
   }
 
   enforce_admins = true

@@ -186,6 +186,50 @@ terraform_deploy() {
   esac
 }
 
+terraform_destroy() {
+  local shared_backend_hcl="$1"
+  local state_key="$2"
+  local init_args="${3:-}"
+
+  echo "[INFO] Terraform destroying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
+  
+  # Validate shared backend file exists
+  if [[ ! -f "${shared_backend_hcl}" ]]; then
+    echo "[ERROR] Backend file for remote state not found: ${shared_backend_hcl}"
+    return 1
+  fi
+  # Validate AWS credentials are present
+  if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
+    echo "[ERROR] Missing AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY in environment."
+    return 1
+  fi
+
+  # Initialize passing shared backend config and a unique key for this stack
+  if ! terraform init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
+    echo "[ERROR] Terraform init with remote state failed." >&2
+    return 1
+  else
+    echo "[INFO] Terraform init with remote state successful." >&2
+  fi
+
+  echo "[INFO] Terraform plan for destroy"
+  terraform plan -destroy -out ".tfplan.local" >/dev/null
+
+  echo "[INFO] Terraform showing destroy plan preview." >&2
+  terraform show ".tfplan.local" || true
+
+  read -r -p "Proceed with destroy using this plan? [y/N] " CONFIRM
+  case "${CONFIRM}" in
+    y|Y|yes|YES)
+      terraform apply ".tfplan.local"
+      ;;
+    *)
+      echo "[INFO] Aborting by user choice." >&2
+      return 2
+      ;;
+  esac
+}
+
 cleanup_local_state() {
   local cleanup_dir="${1:-.}"
 
