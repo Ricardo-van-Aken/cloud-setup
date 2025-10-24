@@ -5,6 +5,7 @@ terraform {
       version = "~> 5.0"
     }
   }
+  backend "s3" {}
 }
 
 provider "github" {
@@ -32,12 +33,6 @@ data "terraform_remote_state" "github_org" {
 }
 
 # Optional: create branches that correspond to environments
-resource "github_branch" "dev" {
-  repository    = var.repository_name
-  branch        = "dev"
-  source_branch = "main"
-}
-
 resource "github_branch" "staging" {
   repository    = var.repository_name
   branch        = "staging"
@@ -47,39 +42,69 @@ resource "github_branch" "staging" {
 resource "github_branch" "production" {
   repository    = var.repository_name
   branch        = "production"
-  source_branch = "main"
+  source_branch = "staging"
+  
+  depends_on = [github_branch.staging]
 }
 
-# Create repository environments and require approvals for staging/production
-locals {
-  repository_environments = ["dev", "staging", "production"]
-}
-
-resource "github_repository_environment" "env" {
-  for_each    = toset(local.repository_environments)
+# Create repository environments with team reviewers
+resource "github_repository_environment" "staging" {
   repository  = var.repository_name
-  environment = each.key
+  environment = "staging"
+}
 
-  dynamic "reviewers" {
-    for_each = each.key == "production" ? [1] : []
-    content {
-      teams = [
-        data.terraform_remote_state.github_org.outputs.devops_team_id
-      ]
-    }
-  }
+resource "github_repository_environment" "production" {
+  repository  = var.repository_name
+  environment = "production"
 
-  dynamic "reviewers" {
-    for_each = each.key == "staging" ? [1] : []
-    content {
-      teams = [
-        data.terraform_remote_state.github_org.outputs.qa_team_id
-      ]
-    }
+  reviewers {
+    teams = [
+      data.terraform_remote_state.github_org.outputs.devops_team_id
+    ]
   }
 }
 
-# Optional: branch protection for production branch
+# Branch protection for main branch (basic protection)
+resource "github_branch_protection" "main" {
+  repository_id = var.repository_name
+  pattern       = "main"
+
+  required_pull_request_reviews {
+    required_approving_review_count = 1
+    dismiss_stale_reviews           = true
+    require_code_owner_reviews      = true
+  }
+
+  required_status_checks {
+    strict   = true
+    contexts = ["ci"]
+  }
+
+  enforce_admins = true
+}
+
+# Branch protection for staging branch (moderately restrictive)
+resource "github_branch_protection" "staging" {
+  repository_id = var.repository_name
+  pattern       = "staging"
+
+  required_pull_request_reviews {
+    required_approving_review_count = 1
+    dismiss_stale_reviews           = true
+    require_code_owner_reviews      = true
+  }
+
+  required_status_checks {
+    strict   = true
+    contexts = ["ci"]
+  }
+
+  enforce_admins = true
+  
+  depends_on = [github_branch.staging]
+}
+
+# Branch protection for production branch (most restrictive - DevOps only)
 resource "github_branch_protection" "production" {
   repository_id = var.repository_name
   pattern       = "production"
@@ -96,4 +121,6 @@ resource "github_branch_protection" "production" {
   }
 
   enforce_admins = true
+  
+  depends_on = [github_branch.production]
 }
