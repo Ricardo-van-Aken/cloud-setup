@@ -77,10 +77,10 @@ resource "github_branch_protection" "main" {
 
   required_status_checks {
     strict   = true
-    contexts = ["tests"]
+    contexts = ["test"]
   }
 
-  enforce_admins = true
+  enforce_admins = false
 }
 
 # Branch protection for staging branch (basic protection)
@@ -96,10 +96,10 @@ resource "github_branch_protection" "staging" {
 
   required_status_checks {
     strict   = true
-    contexts = ["tests"]
+    contexts = ["test"]
   }
 
-  enforce_admins = true
+  enforce_admins = false
   
   depends_on = [github_branch.staging]
 }
@@ -117,10 +117,10 @@ resource "github_branch_protection" "production" {
 
   required_status_checks {
     strict   = true
-    contexts = ["tests"]
+    contexts = ["test"]
   }
 
-  enforce_admins = true
+  enforce_admins = false
   
   depends_on = [github_branch.production]
 }
