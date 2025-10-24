@@ -83,7 +83,7 @@ resource "github_branch_protection" "main" {
   enforce_admins = true
 }
 
-# Branch protection for staging branch (moderately restrictive)
+# Branch protection for staging branch (basic protection)
 resource "github_branch_protection" "staging" {
   repository_id = var.repository_name
   pattern       = "staging"
