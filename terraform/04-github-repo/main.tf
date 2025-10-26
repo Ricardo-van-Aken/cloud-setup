@@ -1,27 +1,28 @@
 terraform {
+  required_version = ">= 1.0"
   required_providers {
     github = {
       source  = "integrations/github"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
   backend "s3" {}
 }
 
 provider "github" {
-  token = var.github_repo_config_token
+  token = var.github_repo_token
   owner = var.github_organization
 }
 
 # Read outputs from the GitHub organization state
-data "terraform_remote_state" "github_org" {
+data "terraform_remote_state" "github-org-config" {
   backend = "s3"
   config = {
     endpoints = {
       s3 = "https://${var.region}.digitaloceanspaces.com"
     }
     bucket                      = "${var.bucket_name}"
-    key                         = "foundation/05-github-org-config/terraform.tfstate"
+    key                         = "foundation/github-org-config/terraform.tfstate"
     region                      = "us-east-1"
     skip_credentials_validation = true
     skip_requesting_account_id  = true
@@ -32,7 +33,21 @@ data "terraform_remote_state" "github_org" {
   }
 }
 
-# Optional: create branches that correspond to environments
+# Create the GitHub repository
+resource "github_repository" "foundation" {
+  name        = var.repository_name
+  description = var.repository_description
+
+  visibility = var.repository_visibility
+  is_template = var.is_template
+
+  template {
+    owner      = var.template_owner
+    repository = var.template_repository
+  }
+}
+
+# Create branches that correspond to environments
 resource "github_branch" "staging" {
   repository    = var.repository_name
   branch        = "staging"
@@ -47,10 +62,21 @@ resource "github_branch" "production" {
   depends_on = [github_branch.staging]
 }
 
+# Add team access to the repository
+resource "github_team_repository" "devops_gouda" {
+  team_id    = data.terraform_remote_state.github-org-config.outputs.devops_gouda_team_id
+  repository  = github_repository.foundation.name
+  permission = "push"
+}
+
 # Create repository environments with team reviewers
 resource "github_repository_environment" "staging" {
   repository  = var.repository_name
   environment = "staging"
+
+  depends_on = [
+    github_team_repository.devops_gouda,
+  ]
 }
 
 resource "github_repository_environment" "production" {
@@ -59,9 +85,13 @@ resource "github_repository_environment" "production" {
 
   reviewers {
     teams = [
-      data.terraform_remote_state.github_org.outputs.devops_team_id
+      data.terraform_remote_state.github-org-config.outputs.devops_gouda_team_id
     ]
   }
+
+  depends_on = [
+    github_team_repository.devops_gouda
+  ]
 }
 
 # Branch protection for main branch (basic protection)
