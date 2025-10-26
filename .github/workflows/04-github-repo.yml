@@ -22,12 +22,12 @@ jobs:
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
 
       # Github repository configuration.
-      TF_VAR_repository_name: ${{ vars.REPOSITORY_NAME }}
-      TF_VAR_repository_description: ${{ vars.REPOSITORY_DESCRIPTION }}
-      TF_VAR_repository_visibility: ${{ vars.REPOSITORY_VISIBILITY }}
-      TF_VAR_template_owner: ${{ vars.TEMPLATE_OWNER }}
-      TF_VAR_template_repository: ${{ vars.TEMPLATE_REPOSITORY }}
-      TF_VAR_is_template: ${{ vars.IS_TEMPLATE }}
+      TF_VAR_repository_name: ${{ vars._GITHUB_org_infra_REPOSITORY_NAME }}
+      TF_VAR_repository_description: ${{ vars._GITHUB_org_infra_REPOSITORY_DESCRIPTION }}
+      TF_VAR_repository_visibility: ${{ vars._GITHUB_org_infra_REPOSITORY_VISIBILITY }}
+      TF_VAR_template_owner: ${{ vars._GITHUB_org_infra_TEMPLATE_OWNER }}
+      TF_VAR_template_repository: ${{ vars._GITHUB_org_infra_TEMPLATE_REPOSITORY }}
+      TF_VAR_is_template: ${{ vars._GITHUB_org_infra_IS_TEMPLATE }}
 
     steps:
       - name: Checkout
