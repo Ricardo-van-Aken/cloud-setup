@@ -16,7 +16,7 @@ variable "region" {
 ##   Provider Authorization   ##
 ################################
 
-variable "do_token" {
+variable "do_org_infra_token" {
   description = "DigitalOcean API token."
   type        = string
   sensitive   = true

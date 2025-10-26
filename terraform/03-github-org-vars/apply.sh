@@ -19,6 +19,6 @@ load_env "${ROOT_DIR}/../.env"
 SHARED_BACKEND_HCL="${ROOT_DIR}/../backend.hcl"
 generate_backend_file "${TF_VAR_region}" "${TF_VAR_bucket_name}" "${SHARED_BACKEND_HCL}"
 
-# Standard init/plan/destroy
-STATE_KEY="foundation/06-github-repo-config/terraform.tfstate"
-terraform_destroy "${SHARED_BACKEND_HCL}" "${STATE_KEY}"
+# Standard init/plan/show/apply
+STATE_KEY="foundation/github-org-vars/terraform.tfstate"
+terraform_deploy "${SHARED_BACKEND_HCL}" "${STATE_KEY}" --migrate-state

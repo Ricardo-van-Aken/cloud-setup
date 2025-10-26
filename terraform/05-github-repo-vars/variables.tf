@@ -30,18 +30,23 @@ variable "github_organization" {
 ##   Local Secrets           ##
 ###############################
 
-variable "do_token" {
+variable "do_org_infra_token" {
   description = "DigitalOcean token from step 01-digitalocean-remote-state"
   type        = string
   sensitive   = true
 }
-variable "github_org_token" {
-  description = "GitHub Personal Access Token from step 02-github-organization"
+variable "github_org_config_token" {
+  description = "GitHub Personal Access Token from step 02-github-org-config"
+  type        = string
+  sensitive   = true
+}
+variable "github_org_vars_token" {
+  description = "GitHub Personal Access Token from step 03-github-org-vars"
   type        = string
   sensitive   = true
 }
 variable "github_repo_token" {
-  description = "GitHub Personal Access Token from step 03-github-repository"
+  description = "GitHub Personal Access Token from step 04-github-repo"
   type        = string
   sensitive   = true
 }

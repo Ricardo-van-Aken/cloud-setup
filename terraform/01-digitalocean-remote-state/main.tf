@@ -10,14 +10,14 @@ terraform {
 
 # Base DO provider.
 provider "digitalocean" {
-  token = var.do_token
+  token = var.do_org_infra_token
 }
 
 # Creates project.
 module "project" {
   source = "./modules/project"
 
-  do_token            = var.do_token
+  do_token            = var.do_org_infra_token
 
   project_name        = var.project_name
   project_description = var.project_description
@@ -41,7 +41,7 @@ module "general_spaces_key" {
 # Create an aliased provider for state bucket creation using general spaces key credentials.
 provider "digitalocean" {
   alias = "DO_spaces_key"
-  token = var.do_token
+  token = var.do_org_infra_token
 
   spaces_access_id  = module.general_spaces_key.access_key
   spaces_secret_key = module.general_spaces_key.secret_key
