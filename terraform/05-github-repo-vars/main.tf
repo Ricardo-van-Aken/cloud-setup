@@ -85,8 +85,8 @@ resource "github_actions_secret" "do_token" {
 }
 
 # Overwrite some private variables from the 02-github-organization-variables step, in case your github plan does not
-# support this feature. You can remove this part if you are using a github plan that supports private environment
-# variables in the organization.
+# support the use of organisation secrets in private repositories. You can remove this part if you are using a github
+# plan that does support this feature.
 resource "github_actions_secret" "spaces_secret_key_ci" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
   secret_name = "DO_SPACES_SECRET_KEY_CI"

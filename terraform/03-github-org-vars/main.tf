@@ -51,7 +51,7 @@ resource "github_actions_organization_secret" "spaces_secret_key_ci" {
 
 # Organization variables
 resource "github_actions_organization_variable" "organization_name" {
-  variable_name = "organization_NAME"
+  variable_name = "_GITHUB_ORGANIZATION_NAME"
   visibility      = "all"
   value           = var.github_organization
 }
