@@ -81,7 +81,7 @@ resource "github_actions_variable" "do_project_environment" {
 resource "github_actions_secret" "do_token" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
   secret_name = "DO_ORG_INFRA_TOKEN"
-  plaintext_value = var.do_token
+  plaintext_value = var.do_org_infra_token
 }
 
 # Overwrite some private variables from the 02-github-organization-variables step, in case your github plan does not

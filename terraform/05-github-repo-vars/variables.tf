@@ -30,7 +30,7 @@ variable "github_organization" {
 ##   Local Secrets           ##
 ###############################
 
-variable "do_token" {
+variable "do_org_infra_token" {
   description = "DigitalOcean token from step 01-digitalocean-remote-state"
   type        = string
   sensitive   = true
