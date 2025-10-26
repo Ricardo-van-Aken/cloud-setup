@@ -16,12 +16,13 @@ jobs:
 
       # Terraforms Github provider authorization
       TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
-      TF_VAR_github_org_config_token: ${{ secrets.ORG_CONFIG_TOKEN }}
+      TF_VAR_github_org_config_token: ${{ secrets._GITHUB_ORG_CONFIG_TOKEN }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: production
           submodules: true
 
       - name: Setup Terraform

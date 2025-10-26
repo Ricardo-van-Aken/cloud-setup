@@ -28,6 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: production
           submodules: true
 
       - name: Setup Terraform

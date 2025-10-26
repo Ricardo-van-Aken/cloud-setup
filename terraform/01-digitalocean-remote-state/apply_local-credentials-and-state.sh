@@ -73,7 +73,7 @@ SHARED_BACKEND_HCL="${ROOT_DIR}/../backend.hcl"
 generate_backend_file "${TF_VAR_region}" "${TF_VAR_bucket_name}" "${SHARED_BACKEND_HCL}"
 
 # After successful apply, migrate state from local to remote, so later runs use remote state.
-STATE_KEY="foundation/01-digitalocean-remote-state/terraform.tfstate"
+STATE_KEY="foundation/digitalocean-remote-state/terraform.tfstate"
 echo "[INFO] Migrating state from local to remote."
 if ! terraform init -backend-config="${SHARED_BACKEND_HCL}" -backend-config="key=${STATE_KEY}" -migrate-state; then
     echo "[WARNING] Terraform init with remote state failed."
