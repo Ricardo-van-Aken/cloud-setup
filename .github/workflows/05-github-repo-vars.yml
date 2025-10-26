@@ -28,6 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: production
           submodules: true
 
       - name: Setup Terraform
@@ -43,7 +44,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/04-github-repository-variables
-        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/04-github-repository-variables/terraform.tfstate"
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/github-repo-vars/terraform.tfstate"
 
       - name: Terraform Plan
         working-directory: terraform/04-github-repository-variables

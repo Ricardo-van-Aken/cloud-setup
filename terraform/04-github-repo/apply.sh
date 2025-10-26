@@ -21,4 +21,4 @@ generate_backend_file "${TF_VAR_region}" "${TF_VAR_bucket_name}" "${SHARED_BACKE
 
 # Standard init/plan/show/apply
 STATE_KEY="foundation/github-repo/terraform.tfstate"
-terraform_deploy "${SHARED_BACKEND_HCL}" "${STATE_KEY}" --migrate-state
+terraform_deploy "${SHARED_BACKEND_HCL}" "${STATE_KEY}"
