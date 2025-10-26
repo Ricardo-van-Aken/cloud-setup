@@ -1,4 +1,4 @@
-name: foundation-05-github-org-config
+name: github-org-config
 
 on:
   workflow_dispatch:
@@ -7,27 +7,31 @@ jobs:
   configure-organization:
     runs-on: ubuntu-latest
     environment: production
+    defaults:
+      run:
+        working-directory: terraform/02-github-org-config
     env:
       # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
       TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ vars.DO_SPACES_ACCESS_KEY_CI }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY_CI }}
 
-      # GitHub token used for creating teams in the org
-      TF_VAR_github_token: ${{ secrets.REPO_CREATION_TOKEN }}
+      # Terraforms Github provider authorization
+      TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
+      TF_VAR_github_org_config_token: ${{ secrets._GITHUB_ORG_CONFIG_TOKEN }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: production
           submodules: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Generate Backend Configuration
-        working-directory: terraform/05-github-org-config
         run: |
           # Source the common script
           source ../../scripts/common.sh
@@ -35,13 +39,10 @@ jobs:
           generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
 
       - name: Terraform Init
-        working-directory: terraform/05-github-org-config
-        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/05-github-org-config/terraform.tfstate"
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/github-org-config/terraform.tfstate"
 
       - name: Terraform Plan
-        working-directory: terraform/05-github-org-config
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        working-directory: terraform/05-github-org-config
         run: terraform apply tfplan
