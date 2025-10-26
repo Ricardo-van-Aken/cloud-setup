@@ -58,22 +58,22 @@ provider "github" {
 # 01-digitalocean-remote-state variables/secrets.
 resource "github_actions_variable" "do_project_name" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "DO_organization_PROJECT_NAME"
+  variable_name = "DO_org_infra_PROJECT_NAME"
   value       = data.terraform_remote_state.do-remote-state.outputs.project_name
 }
 resource "github_actions_variable" "do_project_description" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "DO_organization_PROJECT_DESCRIPTION"
+  variable_name = "DO_org_infra_PROJECT_DESCRIPTION"
   value       = data.terraform_remote_state.do-remote-state.outputs.project_description
 }
 resource "github_actions_variable" "do_project_purpose" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "DO_organization_PROJECT_PURPOSE"
+  variable_name = "DO_org_infra_PROJECT_PURPOSE"
   value       = data.terraform_remote_state.do-remote-state.outputs.project_purpose
 }
 resource "github_actions_variable" "do_project_environment" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "DO_organization_PROJECT_ENVIRONMENT"
+  variable_name = "DO_org_infra_PROJECT_ENVIRONMENT"
   value       = data.terraform_remote_state.do-remote-state.outputs.project_environment
 }
 
@@ -110,32 +110,32 @@ resource "github_actions_secret" "github_org_vars_token" {
 # 04-github-repo variables/secrets.
 resource "github_actions_variable" "repository_name" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "REPOSITORY_NAME"
+  variable_name = "_GITHUB_org_infra_REPOSITORY_NAME"
   value       = data.terraform_remote_state.github-repo.outputs.repository_name
 }
 resource "github_actions_variable" "repository_description" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "REPOSITORY_DESCRIPTION"
+  variable_name = "_GITHUB_org_infra_REPOSITORY_DESCRIPTION"
   value       = data.terraform_remote_state.github-repo.outputs.repository_description
 }
 resource "github_actions_variable" "repository_visibility" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "REPOSITORY_VISIBILITY"
+  variable_name = "_GITHUB_org_infra_REPOSITORY_VISIBILITY"
   value       = data.terraform_remote_state.github-repo.outputs.repository_visibility
 }
 resource "github_actions_variable" "template_owner" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "TEMPLATE_OWNER"
+  variable_name = "_GITHUB_org_infra_TEMPLATE_OWNER"
   value       = data.terraform_remote_state.github-repo.outputs.template_owner
 }
 resource "github_actions_variable" "template_repository" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "TEMPLATE_REPOSITORY"
+  variable_name = "_GITHUB_org_infra_TEMPLATE_REPOSITORY"
   value       = data.terraform_remote_state.github-repo.outputs.template_repository
 }
 resource "github_actions_variable" "is_template" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "IS_TEMPLATE"
+  variable_name = "_GITHUB_org_infra_IS_TEMPLATE"
   value       = data.terraform_remote_state.github-repo.outputs.is_template
 }
 #
