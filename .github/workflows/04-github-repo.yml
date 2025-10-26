@@ -46,7 +46,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/03-github-repository
-        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/03-github-repository/terraform.tfstate"
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/github-repo/terraform.tfstate"
 
       - name: Terraform Plan
         working-directory: terraform/03-github-repository

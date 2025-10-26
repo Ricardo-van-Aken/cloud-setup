@@ -38,7 +38,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/02-github-organization-variables
-        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/02-github-organization-variables/terraform.tfstate"
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/github-org-vars/terraform.tfstate"
 
       - name: Terraform Plan
         working-directory: terraform/02-github-organization-variables
