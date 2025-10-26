@@ -21,10 +21,10 @@ jobs:
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
 
       # DigitalOcean project configuration.
-      TF_VAR_project_name: ${{ vars.DO_organization_PROJECT_NAME }}
-      TF_VAR_project_description: ${{ vars.DO_organization_PROJECT_DESCRIPTION }}
-      TF_VAR_project_purpose: ${{ vars.DO_organization_PROJECT_PURPOSE }}
-      TF_VAR_project_environment: ${{ vars.DO_organization_PROJECT_ENVIRONMENT }}
+      TF_VAR_project_name: ${{ vars.DO_org_infra_PROJECT_NAME }}
+      TF_VAR_project_description: ${{ vars.DO_org_infra_PROJECT_DESCRIPTION }}
+      TF_VAR_project_purpose: ${{ vars.DO_org_infra_PROJECT_PURPOSE }}
+      TF_VAR_project_environment: ${{ vars.DO_org_infra_PROJECT_ENVIRONMENT }}
 
     steps:
       - name: Checkout
