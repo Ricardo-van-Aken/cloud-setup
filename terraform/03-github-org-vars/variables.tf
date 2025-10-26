@@ -16,7 +16,7 @@ variable "bucket_name" {
 ##   Provider Authorization   ##
 ################################
 
-variable "github_org_token" {
+variable "github_org_vars_token" {
   description = "GitHub Personal Access Token with organization admin permissions."
   type        = string
   sensitive   = true

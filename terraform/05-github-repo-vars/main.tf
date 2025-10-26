@@ -80,7 +80,7 @@ resource "github_actions_variable" "do_project_environment" {
 
 resource "github_actions_secret" "do_token" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  secret_name = "STEP_01_DO_TOKEN"
+  secret_name = "DO_ORG_INFRA_TOKEN"
   plaintext_value = var.do_token
 }
 
