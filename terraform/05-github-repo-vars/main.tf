@@ -89,7 +89,7 @@ resource "github_actions_secret" "do_token" {
 # plan that does support this feature.
 resource "github_actions_secret" "spaces_secret_key_ci" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  secret_name = "DO_SPACES_SECRET_KEY_CI"
+  secret_name = "DO_STATE_BUCKET_SECRET_KEY"
   plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
 }
 
