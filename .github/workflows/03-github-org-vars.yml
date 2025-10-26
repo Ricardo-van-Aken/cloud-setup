@@ -7,6 +7,9 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     environment: production
+    defaults:
+      run:
+        working-directory: terraform/03-github-org-vars
     env:
       # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
@@ -29,7 +32,6 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Generate Backend Configuration
-        working-directory: terraform/02-github-organization-variables
         run: |
           # Source the common script
           source ../../scripts/common.sh
@@ -37,14 +39,11 @@ jobs:
           generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
 
       - name: Terraform Init
-        working-directory: terraform/02-github-organization-variables
         run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/github-org-vars/terraform.tfstate"
 
       - name: Terraform Plan
-        working-directory: terraform/02-github-organization-variables
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        working-directory: terraform/02-github-organization-variables
         run: terraform apply tfplan
 
