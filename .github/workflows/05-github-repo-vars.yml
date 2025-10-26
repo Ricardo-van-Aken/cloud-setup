@@ -1,4 +1,4 @@
-name: foundation-04-github-repository-variables
+name: github-repo-vars
 
 on:
   workflow_dispatch:
@@ -16,12 +16,13 @@ jobs:
 
       # Terraforms Github provider authorization
       TF_VAR_github_organization: ${{ vars.ORGANIZATION_NAME }}
+      TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
 
       # Secrets to be added by the terraform to the github repository variables/secrets.
-      TF_VAR_do_token: ${{ secrets.STEP_01_DO_TOKEN }}
-      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_VARS_TOKEN }}
-      TF_VAR_github_repo_token: ${{ secrets._GITHUB_CREATE_REPO_TOKEN }}
-      TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
+      TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
+      TF_VAR_github_org_config_token: ${{ secrets._GITHUB_ORG_CONFIG_TOKEN }}
+      TF_VAR_github_org_vars_token: ${{ secrets._GITHUB_ORG_VARS_TOKEN }}
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
 
     steps:
       - name: Checkout
