@@ -62,10 +62,21 @@ resource "github_branch" "production" {
   depends_on = [github_branch.staging]
 }
 
+# Add team access to the repository
+resource "github_team_repository" "devops_gouda" {
+  team_id    = data.terraform_remote_state.github-org-config.outputs.devops_gouda_team_id
+  repository  = github_repository.foundation.name
+  permission = "push"
+}
+
 # Create repository environments with team reviewers
 resource "github_repository_environment" "staging" {
   repository  = var.repository_name
   environment = "staging"
+
+  depends_on = [
+    github_team_repository.devops_gouda,
+  ]
 }
 
 resource "github_repository_environment" "production" {
@@ -74,9 +85,13 @@ resource "github_repository_environment" "production" {
 
   reviewers {
     teams = [
-      data.terraform_remote_state.github-org-config.outputs.devops_team_id
+      data.terraform_remote_state.github-org-config.outputs.devops_gouda_team_id
     ]
   }
+
+  depends_on = [
+    github_team_repository.devops_gouda
+  ]
 }
 
 # Branch protection for main branch (basic protection)
