@@ -38,13 +38,13 @@ data "terraform_remote_state" "do-remote-state" {
 # Organization secrets
 # Expose DigitalOcean Spaces CI credentials as GitHub Organization secrets
 resource "github_actions_organization_variable" "spaces_access_key_ci" {
-  variable_name     = "DO_SPACES_ACCESS_KEY_CI"
+  variable_name     = "DO_STATE_BUCKET_ACCESS_KEY"
   visibility      = "all"
   value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_access_key_ci
 }
 
 resource "github_actions_organization_secret" "spaces_secret_key_ci" {
-  secret_name     = "DO_SPACES_SECRET_KEY_CI"
+  secret_name     = "DO_STATE_BUCKET_SECRET_KEY"
   visibility      = "private"
   plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
 }
