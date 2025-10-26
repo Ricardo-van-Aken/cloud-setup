@@ -146,8 +146,8 @@ resource "github_actions_secret" "github_repo_token" {
 }
 
 # 04-github-repository-variables variables/secrets.
-resource "github_actions_variable" "github_repo_vars_token" {
+resource "github_actions_secret" "github_repo_vars_token" {
   repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  variable_name = "_GITHUB_REPO_VARS_TOKEN"
-  value       = var.github_repo_vars_token
+  secret_name = "_GITHUB_REPO_VARS_TOKEN"
+  plaintext_value = var.github_repo_vars_token
 }
