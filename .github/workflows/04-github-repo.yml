@@ -1,4 +1,4 @@
-name: digitalocean-remote-state
+name: github-repo
 
 on:
   workflow_dispatch:
@@ -14,14 +14,17 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ vars.DO_SPACES_ACCESS_KEY_CI }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_KEY_CI }}
 
-      # Terraforms DigitalOcean provider authorization.
-      TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
+      # Terraforms Github provider authorization
+      TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_CREATE_REPO_TOKEN }}
 
-      # DigitalOcean project configuration.
-      TF_VAR_project_name: ${{ vars.DO_organization_PROJECT_NAME }}
-      TF_VAR_project_description: ${{ vars.DO_organization_PROJECT_DESCRIPTION }}
-      TF_VAR_project_purpose: ${{ vars.DO_organization_PROJECT_PURPOSE }}
-      TF_VAR_project_environment: ${{ vars.DO_organization_PROJECT_ENVIRONMENT }}
+      # Github repository configuration.
+      TF_VAR_repository_name: ${{ vars.REPOSITORY_NAME }}
+      TF_VAR_repository_description: ${{ vars.REPOSITORY_DESCRIPTION }}
+      TF_VAR_repository_visibility: ${{ vars.REPOSITORY_VISIBILITY }}
+      TF_VAR_template_owner: ${{ vars.TEMPLATE_OWNER }}
+      TF_VAR_template_repository: ${{ vars.TEMPLATE_REPOSITORY }}
+      TF_VAR_is_template: ${{ vars.IS_TEMPLATE }}
 
     steps:
       - name: Checkout
@@ -33,7 +36,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Generate Backend Configuration
-        working-directory: terraform/01-digitalocean-remote-state
+        working-directory: terraform/03-github-repository
         run: |
           # Source the common script
           source ../../scripts/common.sh
@@ -41,15 +44,13 @@ jobs:
           generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
 
       - name: Terraform Init
-        working-directory: terraform/01-digitalocean-remote-state
-        run: terraform init -backend-config="../backend.hcl" -backend-config="key=foundation/01-digitalocean-remote-state/terraform.tfstate"
+        working-directory: terraform/03-github-repository
+        run: terraform init -backend-config ../backend.hcl -backend-config="key=foundation/03-github-repository/terraform.tfstate"
 
       - name: Terraform Plan
-        working-directory: terraform/01-digitalocean-remote-state
+        working-directory: terraform/03-github-repository
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        working-directory: terraform/01-digitalocean-remote-state
+        working-directory: terraform/03-github-repository
         run: terraform apply tfplan
-
-
