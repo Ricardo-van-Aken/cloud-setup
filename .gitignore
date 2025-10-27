@@ -55,3 +55,6 @@ terraform.rc
 
 # Backend file (used for remote state storage when running terraform locally)
 backend.hcl
+
+# Temporary: Ignore local notes
+LOCAL_NOTES.md
