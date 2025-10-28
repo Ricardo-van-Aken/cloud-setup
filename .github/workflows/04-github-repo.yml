@@ -1,4 +1,4 @@
-name: github-repo
+name: foundation-github-repo
 
 on:
   workflow_dispatch:

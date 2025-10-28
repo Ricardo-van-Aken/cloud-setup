@@ -1,4 +1,4 @@
-name: github-org-vars
+name: foundation-github-org-vars
 
 on:
   workflow_dispatch:
