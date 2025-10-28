@@ -38,13 +38,19 @@ module "general_spaces_key" {
   }
 }
 
+# Use provided credentials if available, otherwise fall back to module outputs
+locals {
+  spaces_access_id  = var.spaces_access_id != "" ? var.spaces_access_id : module.general_spaces_key.access_key
+  spaces_secret_key = var.spaces_secret_key != "" ? var.spaces_secret_key : module.general_spaces_key.secret_key
+}
+
 # Create an aliased provider for state bucket creation using general spaces key credentials.
 provider "digitalocean" {
   alias = "DO_spaces_key"
   token = var.do_org_infra_token
 
-  spaces_access_id  = module.general_spaces_key.access_key
-  spaces_secret_key = module.general_spaces_key.secret_key
+  spaces_access_id  = local.spaces_access_id
+  spaces_secret_key = local.spaces_secret_key
 }
 
 # Bucket + bucket-specific key.

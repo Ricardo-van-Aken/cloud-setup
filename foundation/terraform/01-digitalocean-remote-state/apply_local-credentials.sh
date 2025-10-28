@@ -27,6 +27,10 @@ fi
 export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 
+# Also export as Terraform variables for the DigitalOcean provider
+export TF_VAR_spaces_access_id="${AWS_ACCESS_KEY_ID}"
+export TF_VAR_spaces_secret_key="${AWS_SECRET_ACCESS_KEY}"
+
 exec ./apply.sh
 
 # Update local AWS credentials after the new deployment
