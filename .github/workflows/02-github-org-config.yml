@@ -1,4 +1,4 @@
-name: github-org-config
+name: foundation-github-org-config
 
 on:
   workflow_dispatch:
