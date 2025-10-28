@@ -22,6 +22,20 @@ variable "do_org_infra_token" {
   sensitive   = true
 }
 
+variable "spaces_access_id" {
+  description = "Optional: DigitalOcean Spaces access ID for the aliased provider. If not provided, will use module output (creates circular dependency on first run)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "spaces_secret_key" {
+  description = "Optional: DigitalOcean Spaces secret key for the aliased provider. If not provided, will use module output (creates circular dependency on first run)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 ###############################
 ##   Project Configuration   ##
 ###############################
