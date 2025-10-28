@@ -1,4 +1,4 @@
-name: github-org-vars
+name: foundation-github-org-vars
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ jobs:
     environment: production
     defaults:
       run:
-        working-directory: terraform/03-github-org-vars
+        working-directory: foundation/terraform/03-github-org-vars
     env:
       # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
       TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
