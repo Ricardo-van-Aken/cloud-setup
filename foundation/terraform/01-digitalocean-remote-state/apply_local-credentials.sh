@@ -31,7 +31,7 @@ export AWS_SECRET_ACCESS_KEY
 export TF_VAR_spaces_access_id="${AWS_ACCESS_KEY_ID}"
 export TF_VAR_spaces_secret_key="${AWS_SECRET_ACCESS_KEY}"
 
-exec ./apply.sh
+./apply.sh
 
 # Update local AWS credentials after the new deployment
 ACCESS_KEY_LOCAL=$(terraform output -raw bucket_spaces_access_key_local 2>/dev/null || echo "")
