@@ -40,7 +40,7 @@ jobs:
       - name: Generate Backend Configuration
         run: |
           # Source the common script
-          source ../../scripts/common.sh
+          source ../../../foundation/scripts/common.sh
           # Generate backend.hcl using the common function
           generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
 
