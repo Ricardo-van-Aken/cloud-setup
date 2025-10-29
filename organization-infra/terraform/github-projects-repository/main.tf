@@ -50,7 +50,7 @@ resource "github_repository" "projects_repository" {
 # the github plan does not support the use of organisation secrets in private repositories. You can remove this part
 # if you are using a github plan that does support this feature.
 resource "github_actions_secret" "spaces_secret_key_ci" {
-  repository  = data.terraform_remote_state.github-repo.outputs.repository_name
+  repository  = var.repository_name
   secret_name = "DO_STATE_BUCKET_SECRET_KEY"
   plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
 }
