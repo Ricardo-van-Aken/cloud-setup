@@ -14,15 +14,14 @@ provider "github" {
   owner = var.github_organization
 }
 
-# Read outputs from the GitHub organization state (02-github-org-config)
-data "terraform_remote_state" "github_org_config" {
+data "terraform_remote_state" "do-remote-state" {
   backend = "s3"
   config = {
     endpoints = {
       s3 = "https://${var.region}.digitaloceanspaces.com"
     }
-    bucket                      = var.bucket_name
-    key                         = "foundation/github-org-config/terraform.tfstate"
+    bucket                      = "${var.bucket_name}"
+    key                         = "foundation/digitalocean-remote-state/terraform.tfstate"
     region                      = "us-east-1"
     skip_credentials_validation = true
     skip_requesting_account_id  = true
@@ -51,8 +50,7 @@ resource "github_repository" "projects_repository" {
 # the github plan does not support the use of organisation secrets in private repositories. You can remove this part
 # if you are using a github plan that does support this feature.
 resource "github_actions_secret" "spaces_secret_key_ci" {
-  repository    = github_repository.projects_repository.name
-  secret_name   = "DO_STATE_BUCKET_SECRET_KEY"
-  plaintext_value = data.terraform_remote_state.github_org_config.outputs.bucket_spaces_secret_key_ci
+  repository  = data.terraform_remote_state.github-repo.outputs.repository_name
+  secret_name = "DO_STATE_BUCKET_SECRET_KEY"
+  plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
 }
-
