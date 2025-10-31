@@ -35,7 +35,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: Terraform (${{ inputs.action }})
+    name: Terraform (${{ inputs.action }}) - Plan
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -75,11 +75,11 @@ jobs:
         with:
           name: terraform-plan-github-projects-repository
           path: |
-            tfplan
-            backend.hcl
+            organization-infra/terraform/github-projects-repository/tfplan
+            organization-infra/terraform/github-projects-repository/backend.hcl
 
   apply-approved-plan:
-    name: Apply (after manual approval)
+    name: Terraform (${{ inputs.action }}) - Apply (after manual approval)
     if: inputs.action == 'apply' || inputs.action == 'destroy'
     runs-on: ubuntu-latest
     needs: terraform-plan
