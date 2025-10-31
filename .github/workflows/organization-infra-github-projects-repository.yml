@@ -2,40 +2,48 @@ name: organization-infra-github-projects-repository
 
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
+  TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
+  TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
+  AWS_ACCESS_KEY_ID: ${{ vars.DO_STATE_BUCKET_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
+
+  # Terraforms Github provider authorization
+  TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
+  TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
+  TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
+
+  # Repository configuration
+  TF_VAR_repository_name: ${{ vars._GITHUB_projects_repository_REPOSITORY_NAME }}
+  TF_VAR_repository_description: ${{ vars._GITHUB_projects_repository_REPOSITORY_DESCRIPTION }}
+  TF_VAR_repository_visibility: ${{ vars._GITHUB_projects_repository_REPOSITORY_VISIBILITY }}
+  TF_VAR_template_owner: ${{ vars._GITHUB_projects_repository_TEMPLATE_OWNER }}
+  TF_VAR_template_repository: ${{ vars._GITHUB_projects_repository_TEMPLATE_REPOSITORY }}
+  TF_VAR_is_template: ${{ vars._GITHUB_projects_repository_IS_TEMPLATE }}
 
 jobs:
-  apply:
+  terraform-plan:
+    name: Terraform (${{ inputs.action }})
     runs-on: ubuntu-latest
-    environment: production
     defaults:
       run:
         working-directory: organization-infra/terraform/github-projects-repository
-    env:
-      # DigitalOcean Spaces bucket name and access key, used for terraform remote state.
-      TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
-      TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
-      AWS_ACCESS_KEY_ID: ${{ vars.DO_STATE_BUCKET_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
-
-      # Terraforms Github provider authorization
-      TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
-      TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
-      TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
-
-      # Repository configuration
-      TF_VAR_repository_name: ${{ vars._GITHUB_projects_repository_REPOSITORY_NAME }}
-      TF_VAR_repository_description: ${{ vars._GITHUB_projects_repository_REPOSITORY_DESCRIPTION }}
-      TF_VAR_repository_visibility: ${{ vars._GITHUB_projects_repository_REPOSITORY_VISIBILITY }}
-      TF_VAR_template_owner: ${{ vars._GITHUB_projects_repository_TEMPLATE_OWNER }}
-      TF_VAR_template_repository: ${{ vars._GITHUB_projects_repository_TEMPLATE_REPOSITORY }}
-      TF_VAR_is_template: ${{ vars._GITHUB_projects_repository_IS_TEMPLATE }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -45,14 +53,57 @@ jobs:
           # Source the common script
           source ../../../foundation/scripts/common.sh
           # Generate backend.hcl using the common function
-          generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "../backend.hcl"
+          generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "backend.hcl"
 
       - name: Terraform Init
-        run: terraform init -backend-config="../backend.hcl" -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
+        run: terraform init -backend-config="backend.hcl" -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
 
-      - name: Terraform Plan
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan (Apply)
+        if: inputs.action == 'plan' || inputs.action == 'apply'
         run: terraform plan -out=tfplan
 
-      - name: Terraform Apply
+      - name: Terraform Plan (Destroy)
+        if: inputs.action == 'destroy'
+        run: terraform plan -destroy -out=tfplan
+
+      - name: Upload Plan Artifacts
+        if: inputs.action == 'apply' || inputs.action == 'destroy'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-github-projects-repository
+          path: |
+            tfplan
+            backend.hcl
+
+  apply-approved-plan:
+    name: Apply (after manual approval)
+    if: inputs.action == 'apply' || inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    environment: production
+    defaults:
+      run:
+        working-directory: organization-infra/terraform/github-projects-repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Download Plan Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-github-projects-repository
+          path: organization-infra/terraform/github-projects-repository
+
+      - name: Terraform Init
+        run: terraform init -backend-config="backend.hcl" -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
+
+      - name: Terraform Apply (from approved plan)
         run: terraform apply tfplan
 

@@ -39,6 +39,24 @@ data "terraform_remote_state" "do-remote-state" {
   }
 }
 
+data "terraform_remote_state" "github-org-config" {
+  backend = "s3"
+  config = {
+    endpoints = {
+      s3 = "https://${var.region}.digitaloceanspaces.com"
+    }
+    bucket                      = "${var.bucket_name}"
+    key                         = "foundation/github-org-config/terraform.tfstate"
+    region                      = "us-east-1"
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_s3_checksum            = true
+    use_lockfile                = true
+  }
+}
+
 # Create the GitHub repository from template
 resource "github_repository" "projects_repository" {
   name        = var.repository_name
@@ -51,6 +69,37 @@ resource "github_repository" "projects_repository" {
     owner      = var.template_owner
     repository = var.template_repository
   }
+}
+
+# Add a production environment with DevOps team as reviewers
+resource "github_repository_environment" "production" {
+  repository  = github_repository.projects_repository.name
+  environment = "production"
+
+  reviewers {
+    teams = [data.terraform_remote_state.github-org-config.outputs.devops_team_id]
+  }
+
+  depends_on = [github_repository.projects_repository]
+}
+
+# Grant team access to the repository
+resource "github_team_repository" "devops" {
+  team_id    = data.terraform_remote_state.github-org-config.outputs.devops_team_id
+  repository = github_repository.projects_repository.name
+  permission = "push"
+}
+
+resource "github_team_repository" "development" {
+  team_id    = data.terraform_remote_state.github-org-config.outputs.development_team_id
+  repository = github_repository.projects_repository.name
+  permission = "push"
+}
+
+resource "github_team_repository" "qa" {
+  team_id    = data.terraform_remote_state.github-org-config.outputs.qa_team_id
+  repository = github_repository.projects_repository.name
+  permission = "pull"
 }
 
 # Overwrite some private variables from the organization secrets by placing them in the repository secrets, in case
