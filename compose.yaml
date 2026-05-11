@@ -1,0 +1,8 @@
+services:
+  tofu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud-setup-tofu
+    working_dir: /workspace
+    command: sleep infinity

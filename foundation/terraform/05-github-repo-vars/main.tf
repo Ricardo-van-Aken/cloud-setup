@@ -46,7 +46,7 @@ data "terraform_remote_state" "github-repo" {
 }
 
 provider "github" {
-  token = var.github_repo_vars_token
+  token = var.github_repo_token
   owner = var.github_organization
 }
 
@@ -93,18 +93,11 @@ resource "github_actions_secret" "spaces_secret_key_ci" {
   plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
 }
 
-# 02-github-org-config variables/secrets.
-resource "github_actions_secret" "github_org_config_token" {
-  repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  secret_name = "_GITHUB_ORG_CONFIG_TOKEN"
-  plaintext_value = var.github_org_config_token
-}
-
-# 03-github-org-vars variables/secrets.
-resource "github_actions_secret" "github_org_vars_token" {
-  repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  secret_name = "_GITHUB_ORG_VARS_TOKEN"
-  plaintext_value = var.github_org_vars_token
+# 02+03 org token (members, secrets, variables).
+resource "github_actions_secret" "github_org_token" {
+  repository      = data.terraform_remote_state.github-repo.outputs.repository_name
+  secret_name     = "_GITHUB_ORG_TOKEN"
+  plaintext_value = var.github_org_token
 }
 
 # 04-github-repo variables/secrets.
@@ -146,8 +139,3 @@ resource "github_actions_secret" "github_repo_token" {
 }
 
 # 04-github-repository-variables variables/secrets.
-resource "github_actions_secret" "github_repo_vars_token" {
-  repository  = data.terraform_remote_state.github-repo.outputs.repository_name
-  secret_name = "_GITHUB_REPO_VARS_TOKEN"
-  plaintext_value = var.github_repo_vars_token
-}

@@ -18,13 +18,7 @@ variable "bucket_name" {
 ################################
 
 variable "github_repo_token" {
-  description = "GitHub Personal Access Token for creating the github repository"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_repo_vars_token" {
-  description = "GitHub Personal Access Token for managing repository variables and secrets"
+  description = "GitHub Personal Access Token with repository-level permissions (administration, contents, actions, secrets, variables)"
   type        = string
   sensitive   = true
 }
@@ -76,4 +70,3 @@ variable "is_template" {
   type        = bool
   default     = false
 }
-

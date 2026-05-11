@@ -23,7 +23,6 @@ env:
   # Terraforms Github provider authorization
   TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
   TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
-  TF_VAR_github_repo_vars_token: ${{ secrets._GITHUB_REPO_VARS_TOKEN }}
 
   # Repository configuration
   TF_VAR_repository_name: ${{ vars._GITHUB_projects_repository_REPOSITORY_NAME }}
@@ -37,6 +36,8 @@ jobs:
   terraform-plan:
     name: Terraform (${{ inputs.action }}) - Plan
     runs-on: ubuntu-latest
+    env:
+      CONTAINER: cloud-setup-tofu-${{ github.run_id }}
     defaults:
       run:
         working-directory: organization-infra/terraform/github-projects-repository
@@ -45,29 +46,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Build image
+        run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
+
+      - name: Start container
+        run: |
+          docker run -d --name $CONTAINER \
+            -v $GITHUB_WORKSPACE:/workspace \
+            -w /workspace/organization-infra/terraform/github-projects-repository \
+            -e TF_VAR_region -e TF_VAR_bucket_name \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            -e TF_VAR_github_organization -e TF_VAR_github_repo_token \
+            -e TF_VAR_repository_name -e TF_VAR_repository_description \
+            -e TF_VAR_repository_visibility -e TF_VAR_template_owner \
+            -e TF_VAR_template_repository -e TF_VAR_is_template \
+            cloud-setup-tofu sleep infinity
 
       - name: Generate Backend Configuration
         run: |
-          # Source the common script
-          source ../../../foundation/scripts/common.sh
-          # Generate backend.hcl using the common function
-          generate_backend_file "${{ vars.DO_STATE_BUCKET_REGION }}" "${{ vars.DO_STATE_BUCKET_NAME }}" "backend.hcl"
+          docker exec $CONTAINER bash -c "
+            # Source the common script
+            source /workspace/foundation/scripts/common.sh
+            # Generate backend.hcl using the common function
+            generate_backend_file '${{ vars.DO_STATE_BUCKET_REGION }}' '${{ vars.DO_STATE_BUCKET_NAME }}' 'backend.hcl'
+          "
 
       - name: Terraform Init
-        run: terraform init -backend-config="backend.hcl" -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
+        run: |
+          docker exec $CONTAINER \
+            tofu init -backend-config="backend.hcl" \
+                      -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
 
       - name: Terraform Validate
-        run: terraform validate
+        run: docker exec $CONTAINER tofu validate
 
       - name: Terraform Plan (Apply)
         if: inputs.action == 'plan' || inputs.action == 'apply'
-        run: terraform plan -out=tfplan
+        run: docker exec $CONTAINER tofu plan -out=tfplan
 
       - name: Terraform Plan (Destroy)
         if: inputs.action == 'destroy'
-        run: terraform plan -destroy -out=tfplan
+        run: docker exec $CONTAINER tofu plan -destroy -out=tfplan
 
       - name: Upload Plan Artifacts
         if: inputs.action == 'apply' || inputs.action == 'destroy'
@@ -78,12 +97,18 @@ jobs:
             organization-infra/terraform/github-projects-repository/tfplan
             organization-infra/terraform/github-projects-repository/backend.hcl
 
+      - name: Stop container
+        if: always()
+        run: docker rm -f $CONTAINER
+
   apply-approved-plan:
     name: Terraform (${{ inputs.action }}) - Apply (after manual approval)
     if: inputs.action == 'apply' || inputs.action == 'destroy'
     runs-on: ubuntu-latest
     needs: terraform-plan
     environment: production
+    env:
+      CONTAINER: cloud-setup-tofu-${{ github.run_id }}
     defaults:
       run:
         working-directory: organization-infra/terraform/github-projects-repository
@@ -92,8 +117,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Build image
+        run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
 
       - name: Download Plan Artifacts
         uses: actions/download-artifact@v4
@@ -101,9 +126,24 @@ jobs:
           name: terraform-plan-github-projects-repository
           path: organization-infra/terraform/github-projects-repository
 
+      - name: Start container
+        run: |
+          docker run -d --name $CONTAINER \
+            -v $GITHUB_WORKSPACE:/workspace \
+            -w /workspace/organization-infra/terraform/github-projects-repository \
+            -e TF_VAR_region -e TF_VAR_bucket_name \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            cloud-setup-tofu sleep infinity
+
       - name: Terraform Init
-        run: terraform init -backend-config="backend.hcl" -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
+        run: |
+          docker exec $CONTAINER \
+            tofu init -backend-config="backend.hcl" \
+                      -backend-config="key=organization-infra/github-projects-repository/terraform.tfstate"
 
       - name: Terraform Apply (from approved plan)
-        run: terraform apply tfplan
+        run: docker exec $CONTAINER tofu apply tfplan
 
+      - name: Stop container
+        if: always()
+        run: docker rm -f $CONTAINER

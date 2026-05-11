@@ -1,0 +1,14 @@
+.git/
+.github/
+.devcontainer/
+**/.terraform/
+**/.tfdata-local/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+**/.aws/credentials
+**/.aws/config
+**/.env
+**/backend.hcl

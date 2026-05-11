@@ -1,0 +1,17 @@
+{
+  "name": "cloud-setup",
+  "dockerComposeFile": [
+    "../compose.yaml",
+    "../compose.bindmount.yaml"
+  ],
+  "service": "tofu",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform"
+      ]
+    }
+  }
+}

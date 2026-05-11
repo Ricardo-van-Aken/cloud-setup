@@ -1,0 +1,5 @@
+services:
+  tofu:
+    volumes:
+      - .:/workspace
+      - ./foundation/terraform/.aws:/root/.aws:ro
