@@ -16,11 +16,6 @@ variable "bucket_name" {
 ##   Provider Authorization   ##
 ################################
 
-variable "github_repo_vars_token" {
-  description = "GitHub Personal Access Token for creating the github repository"
-  type        = string
-  sensitive   = true
-}
 variable "github_organization" {
   description = "Name of the GitHub organization"
   type        = string
@@ -35,18 +30,13 @@ variable "do_org_infra_token" {
   type        = string
   sensitive   = true
 }
-variable "github_org_config_token" {
-  description = "GitHub Personal Access Token from step 02-github-org-config"
-  type        = string
-  sensitive   = true
-}
-variable "github_org_vars_token" {
-  description = "GitHub Personal Access Token from step 03-github-org-vars"
+variable "github_org_token" {
+  description = "GitHub Personal Access Token with organization-level permissions (members, secrets, variables)"
   type        = string
   sensitive   = true
 }
 variable "github_repo_token" {
-  description = "GitHub Personal Access Token from step 04-github-repo"
+  description = "GitHub Personal Access Token with repository-level permissions (administration, contents, actions, secrets, variables)"
   type        = string
   sensitive   = true
 }

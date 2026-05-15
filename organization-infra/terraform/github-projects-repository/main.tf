@@ -14,13 +14,6 @@ provider "github" {
   owner = var.github_organization
 }
 
-# Provider alias used for managing repository variables and secrets
-provider "github" {
-  alias = "repo_vars"
-  token = var.github_repo_vars_token
-  owner = var.github_organization
-}
-
 data "terraform_remote_state" "do-remote-state" {
   backend = "s3"
   config = {
@@ -106,29 +99,18 @@ resource "github_team_repository" "qa" {
 # the github plan does not support the use of organisation secrets in private repositories. You can remove this part
 # if you are using a github plan that does support this feature.
 resource "github_actions_secret" "spaces_secret_key_ci" {
-  provider      = github.repo_vars
-  repository    = github_repository.projects_repository.name
-  secret_name   = "DO_STATE_BUCKET_SECRET_KEY"
+  repository      = github_repository.projects_repository.name
+  secret_name     = "DO_STATE_BUCKET_SECRET_KEY"
   plaintext_value = data.terraform_remote_state.do-remote-state.outputs.bucket_spaces_secret_key_ci
-  
+
   depends_on = [github_repository.projects_repository]
 }
 
 # Expose tokens needed by project workflows as repository secrets
 resource "github_actions_secret" "github_repo_token" {
-  provider      = github.repo_vars
-  repository    = github_repository.projects_repository.name
-  secret_name   = "_GITHUB_REPO_TOKEN"
+  repository      = github_repository.projects_repository.name
+  secret_name     = "_GITHUB_REPO_TOKEN"
   plaintext_value = var.github_repo_token
-
-  depends_on = [github_repository.projects_repository]
-}
-
-resource "github_actions_secret" "github_repo_vars_token" {
-  provider      = github.repo_vars
-  repository    = github_repository.projects_repository.name
-  secret_name   = "_GITHUB_REPO_VARS_TOKEN"
-  plaintext_value = var.github_repo_vars_token
 
   depends_on = [github_repository.projects_repository]
 }

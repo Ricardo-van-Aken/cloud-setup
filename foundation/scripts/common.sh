@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Common Terraform helper functions for apply scripts
+# Common OpenTofu helper functions for apply scripts
 
 # Load environment variables from .env file
 load_env() {
@@ -147,8 +147,8 @@ terraform_deploy() {
   local state_key="$2"
   local init_args="${3:-}"
 
-  echo "[INFO] Terraform deploying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
-  
+  echo "[INFO] OpenTofu deploying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
+
   # Validate shared backend file exists
   if [[ ! -f "${shared_backend_hcl}" ]]; then
     echo "[ERROR] Backend file for remote state not found: ${shared_backend_hcl}"
@@ -161,23 +161,23 @@ terraform_deploy() {
   fi
 
   # Initialize passing shared backend config and a unique key for this stack
-  if ! terraform init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
-    echo "[ERROR] Terraform init with remote state failed." >&2
+  if ! tofu init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
+    echo "[ERROR] OpenTofu init with remote state failed." >&2
     return 1
   else
-    echo "[INFO] Terraform init with remote state successful." >&2
+    echo "[INFO] OpenTofu init with remote state successful." >&2
   fi
 
-  echo "[INFO] Terraform plan"
-  terraform plan -out ".tfplan.local" >/dev/null
+  echo "[INFO] OpenTofu plan"
+  tofu plan -out ".tfplan.local" >/dev/null
 
-  echo "[INFO] Terraform showing plan preview." >&2
-  terraform show ".tfplan.local" || true
+  echo "[INFO] OpenTofu showing plan preview." >&2
+  tofu show ".tfplan.local" || true
 
   read -r -p "Proceed with apply using this plan? [y/N] " CONFIRM
   case "${CONFIRM}" in
     y|Y|yes|YES)
-      terraform apply ".tfplan.local"
+      tofu apply ".tfplan.local"
       ;;
     *)
       echo "[INFO] Aborting by user choice." >&2
@@ -191,8 +191,8 @@ terraform_destroy() {
   local state_key="$2"
   local init_args="${3:-}"
 
-  echo "[INFO] Terraform destroying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
-  
+  echo "[INFO] OpenTofu destroying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
+
   # Validate shared backend file exists
   if [[ ! -f "${shared_backend_hcl}" ]]; then
     echo "[ERROR] Backend file for remote state not found: ${shared_backend_hcl}"
@@ -205,23 +205,23 @@ terraform_destroy() {
   fi
 
   # Initialize passing shared backend config and a unique key for this stack
-  if ! terraform init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
-    echo "[ERROR] Terraform init with remote state failed." >&2
+  if ! tofu init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
+    echo "[ERROR] OpenTofu init with remote state failed." >&2
     return 1
   else
-    echo "[INFO] Terraform init with remote state successful." >&2
+    echo "[INFO] OpenTofu init with remote state successful." >&2
   fi
 
-  echo "[INFO] Terraform plan for destroy"
-  terraform plan -destroy -out ".tfplan.local" >/dev/null
+  echo "[INFO] OpenTofu plan for destroy"
+  tofu plan -destroy -out ".tfplan.local" >/dev/null
 
-  echo "[INFO] Terraform showing destroy plan preview." >&2
-  terraform show ".tfplan.local" || true
+  echo "[INFO] OpenTofu showing destroy plan preview." >&2
+  tofu show ".tfplan.local" || true
 
   read -r -p "Proceed with destroy using this plan? [y/N] " CONFIRM
   case "${CONFIRM}" in
     y|Y|yes|YES)
-      terraform apply ".tfplan.local"
+      tofu apply ".tfplan.local"
       ;;
     *)
       echo "[INFO] Aborting by user choice." >&2

@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "github" {
-  token = var.github_org_config_token
+  token = var.github_org_token
   owner = var.github_organization
 }
 

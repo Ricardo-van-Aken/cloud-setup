@@ -8,8 +8,8 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "github_org_config_token" {
-  description = "GitHub token for authentication"
+variable "github_org_token" {
+  description = "GitHub Personal Access Token with organization-level permissions (members, secrets, variables)"
   type        = string
   sensitive   = true
 }
