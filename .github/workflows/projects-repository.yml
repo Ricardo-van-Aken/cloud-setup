@@ -1,4 +1,4 @@
-name: organization-infra-github-projects-repository
+name: projects-repository
 
 on:
   workflow_dispatch:
@@ -49,17 +49,15 @@ jobs:
       - name: Build image
         run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
 
+      - name: Write env file for docker container
+        run: printenv | grep -E '^(TF_VAR_|AWS_ACCESS_KEY_ID=|AWS_SECRET_ACCESS_KEY=)' > /tmp/tofu.env
+
       - name: Start container
         run: |
           docker run -d --name $CONTAINER \
             -v $GITHUB_WORKSPACE:/workspace \
             -w /workspace/organization-infra/terraform/github-projects-repository \
-            -e TF_VAR_region -e TF_VAR_bucket_name \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-            -e TF_VAR_github_organization -e TF_VAR_github_repo_token \
-            -e TF_VAR_repository_name -e TF_VAR_repository_description \
-            -e TF_VAR_repository_visibility -e TF_VAR_template_owner \
-            -e TF_VAR_template_repository -e TF_VAR_is_template \
+            --env-file /tmp/tofu.env \
             cloud-setup-tofu sleep infinity
 
       - name: Generate Backend Configuration
@@ -99,7 +97,9 @@ jobs:
 
       - name: Stop container
         if: always()
-        run: docker rm -f $CONTAINER
+        run: |
+          docker rm -f $CONTAINER
+          rm -f /tmp/tofu.env
 
   apply-approved-plan:
     name: Terraform (${{ inputs.action }}) - Apply (after manual approval)
@@ -126,13 +126,15 @@ jobs:
           name: terraform-plan-github-projects-repository
           path: organization-infra/terraform/github-projects-repository
 
+      - name: Write env file for docker container
+        run: printenv | grep -E '^(TF_VAR_|AWS_ACCESS_KEY_ID=|AWS_SECRET_ACCESS_KEY=)' > /tmp/tofu.env
+
       - name: Start container
         run: |
           docker run -d --name $CONTAINER \
             -v $GITHUB_WORKSPACE:/workspace \
             -w /workspace/organization-infra/terraform/github-projects-repository \
-            -e TF_VAR_region -e TF_VAR_bucket_name \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            --env-file /tmp/tofu.env \
             cloud-setup-tofu sleep infinity
 
       - name: Terraform Init
@@ -146,4 +148,6 @@ jobs:
 
       - name: Stop container
         if: always()
-        run: docker rm -f $CONTAINER
+        run: |
+          docker rm -f $CONTAINER
+          rm -f /tmp/tofu.env

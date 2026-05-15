@@ -1,0 +1,60 @@
+name: foundation - 02-github-org-config
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action"
+        required: true
+        default: "plan-apply"
+        type: choice
+        options:
+          - plan-apply
+          - plan-destroy
+          - apply
+          - destroy
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ vars.DO_STATE_BUCKET_ACCESS_KEY }}
+  TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
+  TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
+  TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
+
+jobs:
+  plan:
+    name: Tofu (02-github-org-config) - Plan
+    runs-on: ubuntu-latest
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+          submodules: true
+      - uses: ./.github/actions/tofu-plan
+        with:
+          working_dir: /workspace/foundation/terraform/02-github-org-config
+          state_key: foundation/github-org-config/terraform.tfstate
+          action: ${{ inputs.action }}
+          artifact_name: terraform-plan-02-github-org-config
+
+  apply-approved-plan:
+    name: Tofu (02-github-org-config) - Apply (after manual approval)
+    if: inputs.action == 'apply' || inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    needs: plan
+    environment: production
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
+          submodules: true
+      - uses: ./.github/actions/tofu-apply
+        with:
+          working_dir: /workspace/foundation/terraform/02-github-org-config
+          state_key: foundation/github-org-config/terraform.tfstate
+          artifact_name: terraform-plan-02-github-org-config
