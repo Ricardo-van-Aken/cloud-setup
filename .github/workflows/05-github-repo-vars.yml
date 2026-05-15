@@ -31,9 +31,6 @@ jobs:
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-plan
         with:
           working_dir: /workspace/foundation/terraform/05-github-repo-vars
@@ -54,9 +51,6 @@ jobs:
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-apply
         with:
           working_dir: /workspace/foundation/terraform/05-github-repo-vars
