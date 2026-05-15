@@ -19,11 +19,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: production
-        submodules: true
-
     - name: Build image
       shell: bash
       run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
