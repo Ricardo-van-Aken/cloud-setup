@@ -32,9 +32,6 @@ jobs:
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-plan
         with:
           working_dir: /workspace/foundation/terraform/01-digitalocean-remote-state
@@ -53,9 +50,6 @@ jobs:
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-apply
         with:
           working_dir: /workspace/foundation/terraform/01-digitalocean-remote-state

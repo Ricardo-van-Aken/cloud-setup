@@ -29,9 +29,6 @@ jobs:
       TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-plan
         with:
           working_dir: /workspace/foundation/terraform/02-github-org-config
@@ -50,9 +47,6 @@ jobs:
       TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: production
-          submodules: true
       - uses: ./.github/actions/tofu-apply
         with:
           working_dir: /workspace/foundation/terraform/02-github-org-config
