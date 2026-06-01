@@ -51,7 +51,7 @@ jobs:
         with:
           working_dir: /workspace/foundation/terraform/01-digitalocean-remote-state
           state_key: foundation/digitalocean-remote-state/terraform.tfstate
-          action: ${{ inputs.action }}
+          action: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || (inputs.action == 'plan-destroy' || inputs.action == 'destroy') && 'destroy' }}
           artifact_name: terraform-plan-01-digitalocean-remote-state
 
   apply-approved-plan:

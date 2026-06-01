@@ -1,3 +1,4 @@
 #!/bin/bash
-STEP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "${STEP_DIR}/../../scripts/apply.sh" "${STEP_DIR}" "foundation/github-repo-vars/terraform.tfstate"
+readonly TF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly STATE_DIR="foundation/github-repo-vars"
+exec "${TF_DIR}/../../scripts/apply.sh" "${TF_DIR}" "${STATE_DIR}"

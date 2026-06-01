@@ -50,7 +50,7 @@ jobs:
         with:
           working_dir: /workspace/foundation/terraform/05-github-repo-vars
           state_key: foundation/github-repo-vars/terraform.tfstate
-          action: ${{ inputs.action }}
+          action: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || (inputs.action == 'plan-destroy' || inputs.action == 'destroy') && 'destroy' }}
           artifact_name: terraform-plan-05-github-repo-vars
 
   apply-approved-plan:

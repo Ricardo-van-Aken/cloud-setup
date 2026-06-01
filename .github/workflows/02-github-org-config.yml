@@ -48,7 +48,7 @@ jobs:
         with:
           working_dir: /workspace/foundation/terraform/02-github-org-config
           state_key: foundation/github-org-config/terraform.tfstate
-          action: ${{ inputs.action }}
+          action: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || (inputs.action == 'plan-destroy' || inputs.action == 'destroy') && 'destroy' }}
           artifact_name: terraform-plan-02-github-org-config
 
   apply-approved-plan:

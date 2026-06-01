@@ -73,7 +73,7 @@ runs:
       run: docker exec cloud-setup-tofu-${{ github.run_id }} tofu validate
 
     - name: Tofu Plan
-      if: inputs.action == 'plan-apply' || inputs.action == 'apply'
+      if: inputs.action == 'apply'
       shell: bash
       run: |
         docker exec cloud-setup-tofu-${{ github.run_id }} bash -c "
@@ -82,7 +82,7 @@ runs:
         "
 
     - name: Tofu Plan (destroy)
-      if: inputs.action == 'destroy' || inputs.action == 'plan-destroy'
+      if: inputs.action == 'destroy'
       shell: bash
       run: |
         docker exec cloud-setup-tofu-${{ github.run_id }} bash -c "
