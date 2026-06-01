@@ -115,8 +115,10 @@ jobs:
         run: |
           EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
           docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
+            set -eo pipefail
             printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
             tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+            tofu destroy -auto-approve
             tofu apply -auto-approve
           "
 
