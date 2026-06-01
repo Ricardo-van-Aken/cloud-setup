@@ -188,6 +188,7 @@ jobs:
         if: env.TOFU_ACTION == 'apply'
         run: |
           docker exec cloud-setup-tofu bash -c "
+            set -eo pipefail
             eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
             tofu plan -out=tfplan
           "
@@ -196,6 +197,7 @@ jobs:
         if: env.TOFU_ACTION == 'destroy'
         run: |
           docker exec cloud-setup-tofu bash -c "
+            set -eo pipefail
             eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
             tofu plan -destroy -out=tfplan
           "
@@ -282,6 +284,7 @@ jobs:
       - name: Tofu apply
         run: |
           docker exec cloud-setup-tofu bash -c "
+            set -eo pipefail
             eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
             tofu apply tfplan
           "
