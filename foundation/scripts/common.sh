@@ -1,12 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
-# Common OpenTofu helper functions for apply scripts
+# Common OpenTofu helper functions for apply scripts.
 
-# Load environment variables from .env file
+# Load environment variables from .env file.
 load_env() {
   local env_file="${1:-.env}"
-  
+
   if [[ -f "${env_file}" ]]; then
     echo "[INFO] Loading environment variables from ${env_file}" >&2
     set -a
@@ -19,7 +19,7 @@ load_env() {
   fi
 }
 
-# Generate backend.hcl from bucket region and name
+# Generate backend.hcl from bucket region and name.
 generate_backend_file() {
   local spaces_region="${1:-}"
   local bucket_name="${2:-}"
@@ -29,9 +29,9 @@ generate_backend_file() {
     echo "[ERROR] Bucket name is required to generate backend.hcl" >&2
     return 1
   fi
-  
+
   echo "[INFO] Generating ${backend_file} with bucket name: ${bucket_name}" >&2
-  
+
   cat > "${backend_file}" << EOF
 # Shared backend configuration for DigitalOcean Spaces (S3-compatible)
 
@@ -56,11 +56,10 @@ EOF
   echo "[SUCCESS] Generated ${backend_file}" >&2
 }
 
-# check_aws_credentials AWS_CREDENTIALS_FILE AWS_PROFILE
-# Returns 0 if credentials file exists and contains the profile, else 1
+# Returns 0 if credentials file exists and contains the profile, else 1.
 check_local_aws_credentials() {
-  local credentials_file="$1"
-  local profile_name="$2"
+  local credentials_file="${1}"
+  local profile_name="${2}"
 
   echo "[INFO] Checking if AWS credentials exist with DigitalOcean Spaces profile." >&2
 
@@ -79,31 +78,38 @@ check_local_aws_credentials() {
 }
 
 get_local_aws_credentials() {
-  local credentials_file="$1"
-  local profile_name="$2"
-  local -n aws_access_key_id="$3"
-  local -n aws_secret_access_key="$4"
+  local credentials_file="${1}"
+  local profile_name="${2}"
+  local -n aws_access_key_id="${3}"
+  local -n aws_secret_access_key="${4}"
 
   echo "[INFO] Getting local AWS credentials for profile: ${profile_name}" >&2
-  
-  # Check if awk is installed
+
   if ! command -v awk >/dev/null 2>&1; then
     echo "[ERROR] awk is required" >&2
     exit 1
   fi
 
-  # Check if local credentials file exists
   if ! check_local_aws_credentials "${credentials_file}" "${profile_name}"; then
     echo "[ERROR] Credentials file not found: ${credentials_file}" >&2
     return 1
   fi
 
-  # Read AWS keys from local credentials file
-  aws_access_key_id=$(awk -v p="${profile_name}" 'BEGIN{f=0} $0=="["p"]"{f=1;next} f&&/^aws_access_key_id/{print $3; exit}' "${credentials_file}" || true)
-  aws_secret_access_key=$(awk -v p="${profile_name}" 'BEGIN{f=0} $0=="["p"]"{f=1;next} f&&/^aws_secret_access_key/{print $3; exit}' "${credentials_file}" || true)
-  
+  # shellcheck disable=SC2034
+  aws_access_key_id="$(
+    awk -v p="${profile_name}" \
+      'BEGIN{f=0} $0=="["p"]"{f=1;next} f&&/^aws_access_key_id/{print $3; exit}' \
+      "${credentials_file}" || true
+  )"
+  # shellcheck disable=SC2034
+  aws_secret_access_key="$(
+    awk -v p="${profile_name}" \
+      'BEGIN{f=0} $0=="["p"]"{f=1;next} f&&/^aws_secret_access_key/{print $3; exit}' \
+      "${credentials_file}" || true
+  )"
+
   if [[ -z "${aws_access_key_id}" || -z "${aws_secret_access_key}" ]]; then
-    echo "[ERROR] Failed to read AWS credentials for profile ${profile_name} from ${credentials_file}" >&2
+    echo "[ERROR] Failed to read AWS credentials for profile ${profile_name}" >&2
     return 1
   fi
 
@@ -111,10 +117,10 @@ get_local_aws_credentials() {
 }
 
 update_local_aws_credentials() {
-  local credentials_file="$1"
-  local profile_name="$2"
-  local access_key_local="$3"
-  local secret_key_local="$4"
+  local credentials_file="${1}"
+  local profile_name="${2}"
+  local access_key_local="${3}"
+  local secret_key_local="${4}"
 
   echo "[INFO] Updating local AWS credentials file (profile: ${profile_name})." >&2
 
@@ -122,16 +128,16 @@ update_local_aws_credentials() {
   credentials_dir="$(dirname "${credentials_file}")"
   mkdir -p "${credentials_dir}"
 
-  # Create file if missing
   if [[ ! -f "${credentials_file}" ]]; then
     touch "${credentials_file}"
   fi
 
-  # Remove existing profile block (if present)
+  # Remove existing profile block (if present).
   # shellcheck disable=SC2016
-  sed -i.bak "/\\[${profile_name}\\]/,/^\\[/ { /\\[${profile_name}\\]/d; /^\\[/!d; }" "${credentials_file}" || true
+  sed -i.bak \
+    "/\\[${profile_name}\\]/,/^\\[/ { /\\[${profile_name}\\]/d; /^\\[/!d; }" \
+    "${credentials_file}" || true
 
-  # Append updated profile block
   {
     echo "[${profile_name}]"
     echo "aws_access_key_id = ${access_key_local}"
@@ -143,39 +149,40 @@ update_local_aws_credentials() {
 }
 
 terraform_deploy() {
-  local shared_backend_hcl="$1"
-  local state_key="$2"
+  local shared_backend_hcl="${1}"
+  local state_key="${2}"
   local init_args="${3:-}"
 
-  echo "[INFO] OpenTofu deploying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
+  echo "[INFO] OpenTofu deploying: backend=${shared_backend_hcl} key=${state_key}" >&2
 
-  # Validate shared backend file exists
   if [[ ! -f "${shared_backend_hcl}" ]]; then
-    echo "[ERROR] Backend file for remote state not found: ${shared_backend_hcl}"
+    echo "[ERROR] Backend file not found: ${shared_backend_hcl}" >&2
     return 1
   fi
-  # Validate AWS credentials are present
   if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
-    echo "[ERROR] Missing AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY in environment."
+    echo "[ERROR] Missing AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY in environment." >&2
     return 1
   fi
 
-  # Initialize passing shared backend config and a unique key for this stack
-  if ! tofu init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
-    echo "[ERROR] OpenTofu init with remote state failed." >&2
+  # shellcheck disable=SC2086
+  if ! tofu init \
+      -backend-config="${shared_backend_hcl}" \
+      -backend-config="key=${state_key}" \
+      ${init_args}; then
+    echo "[ERROR] OpenTofu init failed." >&2
     return 1
-  else
-    echo "[INFO] OpenTofu init with remote state successful." >&2
   fi
+  echo "[INFO] OpenTofu init successful." >&2
 
-  echo "[INFO] OpenTofu plan"
+  echo "[INFO] OpenTofu plan" >&2
   tofu plan -out ".tfplan.local" >/dev/null
 
   echo "[INFO] OpenTofu showing plan preview." >&2
   tofu show ".tfplan.local" || true
 
-  read -r -p "Proceed with apply using this plan? [y/N] " CONFIRM
-  case "${CONFIRM}" in
+  local confirm
+  read -r -p "Proceed with apply using this plan? [y/N] " confirm
+  case "${confirm}" in
     y|Y|yes|YES)
       tofu apply ".tfplan.local"
       ;;
@@ -187,39 +194,40 @@ terraform_deploy() {
 }
 
 terraform_destroy() {
-  local shared_backend_hcl="$1"
-  local state_key="$2"
+  local shared_backend_hcl="${1}"
+  local state_key="${2}"
   local init_args="${3:-}"
 
-  echo "[INFO] OpenTofu destroying with shared backend config: ${shared_backend_hcl} and state key: ${state_key}" >&2
+  echo "[INFO] OpenTofu destroying: backend=${shared_backend_hcl} key=${state_key}" >&2
 
-  # Validate shared backend file exists
   if [[ ! -f "${shared_backend_hcl}" ]]; then
-    echo "[ERROR] Backend file for remote state not found: ${shared_backend_hcl}"
+    echo "[ERROR] Backend file not found: ${shared_backend_hcl}" >&2
     return 1
   fi
-  # Validate AWS credentials are present
   if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
-    echo "[ERROR] Missing AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY in environment."
+    echo "[ERROR] Missing AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY in environment." >&2
     return 1
   fi
 
-  # Initialize passing shared backend config and a unique key for this stack
-  if ! tofu init -backend-config="${shared_backend_hcl}" -backend-config="key=${state_key}" ${init_args:-}; then
-    echo "[ERROR] OpenTofu init with remote state failed." >&2
+  # shellcheck disable=SC2086
+  if ! tofu init \
+      -backend-config="${shared_backend_hcl}" \
+      -backend-config="key=${state_key}" \
+      ${init_args}; then
+    echo "[ERROR] OpenTofu init failed." >&2
     return 1
-  else
-    echo "[INFO] OpenTofu init with remote state successful." >&2
   fi
+  echo "[INFO] OpenTofu init successful." >&2
 
-  echo "[INFO] OpenTofu plan for destroy"
+  echo "[INFO] OpenTofu plan for destroy" >&2
   tofu plan -destroy -out ".tfplan.local" >/dev/null
 
   echo "[INFO] OpenTofu showing destroy plan preview." >&2
   tofu show ".tfplan.local" || true
 
-  read -r -p "Proceed with destroy using this plan? [y/N] " CONFIRM
-  case "${CONFIRM}" in
+  local confirm
+  read -r -p "Proceed with destroy using this plan? [y/N] " confirm
+  case "${confirm}" in
     y|Y|yes|YES)
       tofu apply ".tfplan.local"
       ;;
@@ -230,21 +238,71 @@ terraform_destroy() {
   esac
 }
 
+terraform_apply_ephemerals() {
+  local backend_hcl="${1:-}"
+  local ephemerals_state_key="${2:-}"
+
+  if [[ ! -d "./ephemerals" ]]; then
+    echo "[INFO] No ephemerals directory, skipping." >&2
+    return 0
+  fi
+
+  echo "[INFO] Applying ephemeral resources..." >&2
+
+  pushd "./ephemerals" > /dev/null
+
+  if [[ -n "${backend_hcl}" && -n "${ephemerals_state_key}" ]]; then
+    printf 'terraform { backend "s3" {} }\n' > backend.tf
+    tofu init -reconfigure \
+      -backend-config="${backend_hcl}" \
+      -backend-config="key=${ephemerals_state_key}"
+  else
+    tofu init -reconfigure
+  fi
+
+  tofu apply -auto-approve
+  eval "$(tofu output -json \
+    | jq -r 'to_entries[] | "export TF_VAR_\(.key)=\(.value.value | @sh)"')"
+
+  popd > /dev/null
+  echo "[INFO] Ephemeral resources applied and outputs exported as TF_VAR_*." >&2
+}
+
+terraform_destroy_ephemerals() {
+  if [[ ! -d "./ephemerals" ]]; then
+    echo "[INFO] No ephemerals directory, skipping." >&2
+    return 0
+  fi
+
+  echo "[INFO] Destroying ephemeral resources..." >&2
+
+  pushd "./ephemerals" > /dev/null
+  tofu destroy -auto-approve
+  rm -f backend.tf
+  cleanup_local_state .
+  popd > /dev/null
+
+  echo "[INFO] Ephemeral resources destroyed." >&2
+}
+
 cleanup_local_state() {
   local cleanup_dir="${1:-.}"
 
-  echo "[INFO] Cleaning up local Terraform plan and state files securely in ${cleanup_dir}." >&2
-  
+  echo "[INFO] Cleaning up local state files in ${cleanup_dir}." >&2
+
   if [[ ! -d "${cleanup_dir}" ]]; then
     echo "[ERROR] Directory does not exist: ${cleanup_dir}" >&2
     return 1
   fi
 
   if command -v shred >/dev/null 2>&1; then
-    if [[ -f "${cleanup_dir}/terraform.tfstate" ]]; then shred -u -n 3 -z -- "${cleanup_dir}/terraform.tfstate"; fi
-    if [[ -f "${cleanup_dir}/terraform.tfstate.backup" ]]; then shred -u -n 3 -z -- "${cleanup_dir}/terraform.tfstate.backup"; fi
+    if [[ -f "${cleanup_dir}/terraform.tfstate" ]]; then
+      shred -u -n 3 -z -- "${cleanup_dir}/terraform.tfstate"
+    fi
+    if [[ -f "${cleanup_dir}/terraform.tfstate.backup" ]]; then
+      shred -u -n 3 -z -- "${cleanup_dir}/terraform.tfstate.backup"
+    fi
   else
-    echo "[WARNING] shred is not installed, skipping secure deletion of local Terraform plan and state files." >&2
+    echo "[WARNING] shred not installed; local state files not securely deleted." >&2
   fi
 }
-

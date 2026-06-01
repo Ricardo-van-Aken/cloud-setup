@@ -1,24 +1,23 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "${ROOT_DIR}"
+readonly TF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPTS_DIR="${TF_DIR}/../../scripts"
 
-# Load helpers
-COMMON_SH="${ROOT_DIR}/../../scripts/common.sh"
-if [[ -f "${COMMON_SH}" ]]; then
-  source "${COMMON_SH}"
-else
-  echo "[ERROR] Helper not found at path: ${COMMON_SH}"
-  exit 1
-fi
+source "${SCRIPTS_DIR}/common.sh"
 
-load_env "${ROOT_DIR}/../.env"
+refresh_state_bucket_credentials() {
+  local access_key
+  local secret_key
+  cd "${TF_DIR}"
+  access_key="$(tofu output -raw bucket_spaces_access_key_local 2>/dev/null || true)"
+  secret_key="$(tofu output -raw bucket_spaces_secret_key_local 2>/dev/null || true)"
+  if [[ -n "${access_key}" && -n "${secret_key}" ]]; then
+    update_local_aws_credentials \
+      "${SCRIPTS_DIR}/../.aws/credentials" "digitalocean-spaces" \
+      "${access_key}" "${secret_key}"
+  fi
+}
 
-# Generate backend.hcl from bucket region and name
-SHARED_BACKEND_HCL="${ROOT_DIR}/../backend.hcl"
-generate_backend_file "${TF_VAR_region}" "${TF_VAR_bucket_name}" "${SHARED_BACKEND_HCL}"
-
-# Standard init/plan/show/apply
-STATE_KEY="foundation/digitalocean-remote-state/terraform.tfstate"
-terraform_deploy "${SHARED_BACKEND_HCL}" "${STATE_KEY}"
+"${SCRIPTS_DIR}/apply.sh" "${TF_DIR}" "foundation/digitalocean-remote-state"
+refresh_state_bucket_credentials

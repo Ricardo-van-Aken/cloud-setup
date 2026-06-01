@@ -27,6 +27,19 @@ env:
   TF_VAR_is_template: ${{ vars._GITHUB_org_infra_IS_TEMPLATE }}
 
 jobs:
+  validate:
+    name: Validate branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require production branch for apply/destroy
+        if: inputs.action == 'apply' || inputs.action == 'destroy'
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" != "production" ]; then
+            echo "::error::apply and destroy must be triggered from the production branch (current: ${{ github.ref_name }})"
+            exit 1
+          fi
+
   plan:
     name: Tofu (04-github-repo) - Plan
     runs-on: ubuntu-latest
@@ -35,24 +48,28 @@ jobs:
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: ./.github/actions/tofu-plan
         with:
           working_dir: /workspace/foundation/terraform/04-github-repo
           state_key: foundation/github-repo/terraform.tfstate
-          action: ${{ inputs.action }}
+          action: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || (inputs.action == 'plan-destroy' || inputs.action == 'destroy') && 'destroy' }}
           artifact_name: terraform-plan-04-github-repo
 
   apply-approved-plan:
     name: Tofu (04-github-repo) - Apply (after manual approval)
     if: inputs.action == 'apply' || inputs.action == 'destroy'
     runs-on: ubuntu-latest
-    needs: plan
+    needs: [validate, plan]
     environment: production
     env:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: ./.github/actions/tofu-apply
         with:
           working_dir: /workspace/foundation/terraform/04-github-repo

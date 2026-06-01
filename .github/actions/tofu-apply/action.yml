@@ -15,11 +15,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: production
-        submodules: true
-
     - name: Build image
       shell: bash
       run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
@@ -49,6 +44,24 @@ runs:
           generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
         "
 
+    - name: Apply ephemerals
+      shell: bash
+      env:
+        WORKING_DIR: ${{ inputs.working_dir }}
+        STATE_KEY: ${{ inputs.state_key }}
+      run: |
+        EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+        if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+          echo "[INFO] No ephemerals directory found, skipping."
+          exit 0
+        fi
+        EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+        docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu-${{ github.run_id }} bash -c "
+          printf 'terraform { backend \"s3\" {} }\n' > backend.tf
+          tofu init -reconfigure -backend-config=../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+          tofu apply -auto-approve
+        "
+
     - name: Tofu Init
       shell: bash
       run: |
@@ -62,11 +75,31 @@ runs:
 
     - name: Tofu Apply
       shell: bash
-      run: docker exec cloud-setup-tofu-${{ github.run_id }} tofu apply tfplan
+      run: |
+        docker exec cloud-setup-tofu-${{ github.run_id }} bash -c "
+          eval \"\$(tofu -chdir=./ephemerals output -json 2>/dev/null | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"' 2>/dev/null || true)\"
+          tofu apply tfplan
+        "
+
+    - name: Destroy ephemerals
+      if: always()
+      shell: bash
+      env:
+        WORKING_DIR: ${{ inputs.working_dir }}
+        STATE_KEY: ${{ inputs.state_key }}
+      run: |
+        EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+        if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+          echo "[INFO] No ephemerals directory found, skipping."
+          exit 0
+        fi
+        EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+        docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu-${{ github.run_id }} bash -c "
+          tofu destroy -auto-approve
+          rm -f backend.tf
+        "
 
     - name: Stop container
       if: always()
       shell: bash
-      run: |
-        docker rm -f cloud-setup-tofu-${{ github.run_id }}
-        rm -f /tmp/tofu.env
+      run: docker rm -f cloud-setup-tofu-${{ github.run_id }}
