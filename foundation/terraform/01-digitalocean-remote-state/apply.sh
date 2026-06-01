@@ -19,5 +19,7 @@ refresh_state_bucket_credentials() {
   fi
 }
 
-"${SCRIPTS_DIR}/apply.sh" "${TF_DIR}" "foundation/digitalocean-remote-state"
+readonly STATE_DIR="$(cat "${TF_DIR}/.state-dir")"
+
+"${SCRIPTS_DIR}/apply.sh" "${TF_DIR}" "${STATE_DIR}"
 refresh_state_bucket_credentials

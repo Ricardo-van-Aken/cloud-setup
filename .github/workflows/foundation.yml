@@ -1,0 +1,266 @@
+name: foundation
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "Foundation step"
+        required: true
+        type: choice
+        options:
+          - 01-digitalocean-remote-state
+          - 02-github-org-config
+          - 03-github-org-vars
+          - 04-github-repo
+          - 05-github-repo-vars
+      action:
+        description: "Terraform action"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - plan-apply
+          - plan-destroy
+          - apply
+          - destroy
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ vars.DO_STATE_BUCKET_ACCESS_KEY }}
+  TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
+  TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
+  TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
+  TF_VAR_project_name: ${{ vars.DO_org_infra_PROJECT_NAME }}
+  TF_VAR_project_description: ${{ vars.DO_org_infra_PROJECT_DESCRIPTION }}
+  TF_VAR_project_purpose: ${{ vars.DO_org_infra_PROJECT_PURPOSE }}
+  TF_VAR_project_environment: ${{ vars.DO_org_infra_PROJECT_ENVIRONMENT }}
+  TF_VAR_repository_name: ${{ vars._GITHUB_org_infra_REPOSITORY_NAME }}
+  TF_VAR_repository_description: ${{ vars._GITHUB_org_infra_REPOSITORY_DESCRIPTION }}
+  TF_VAR_repository_visibility: ${{ vars._GITHUB_org_infra_REPOSITORY_VISIBILITY }}
+  TF_VAR_template_owner: ${{ vars._GITHUB_org_infra_TEMPLATE_OWNER }}
+  TF_VAR_template_repository: ${{ vars._GITHUB_org_infra_TEMPLATE_REPOSITORY }}
+  TF_VAR_is_template: ${{ vars._GITHUB_org_infra_IS_TEMPLATE }}
+
+jobs:
+  validate:
+    name: Validate branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require production branch for apply/destroy
+        if: inputs.action == 'apply' || inputs.action == 'destroy'
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" != "production" ]; then
+            echo "::error::apply and destroy must be triggered from the production branch (current: ${{ github.ref_name }})"
+            exit 1
+          fi
+
+  plan:
+    name: Plan (${{ inputs.step }})
+    runs-on: ubuntu-latest
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
+      TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
+      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+      TOFU_ACTION: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || 'destroy' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Read state key directory
+        id: config
+        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+
+      - name: Build image
+        run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
+
+      - name: Write env file
+        run: printenv | grep -E '^(AWS_ACCESS_KEY_ID=|AWS_SECRET_ACCESS_KEY=|TF_VAR_)' | grep -v '=$' > /tmp/tofu.env
+
+      - name: Start container
+        run: |
+          docker run -d --name cloud-setup-tofu \
+            -w $WORKING_DIR \
+            --env-file /tmp/tofu.env \
+            cloud-setup-tofu sleep infinity
+
+      - name: Generate backend configuration
+        run: |
+          docker exec cloud-setup-tofu bash -c "
+            source ../../scripts/common.sh
+            generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
+          "
+
+      - name: Apply ephemerals
+        env:
+          STATE_KEY: ${{ steps.config.outputs.state_key }}
+        run: |
+          EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+          if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+            echo "[INFO] No ephemerals directory found, skipping."
+            exit 0
+          fi
+          EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+          docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
+            printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
+            tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+            tofu apply -auto-approve
+          "
+
+      - name: Tofu init
+        run: |
+          docker exec cloud-setup-tofu \
+            tofu init -backend-config ../backend.hcl \
+                      -backend-config="key=${{ steps.config.outputs.state_key }}"
+
+      - name: Tofu validate
+        run: docker exec cloud-setup-tofu tofu validate
+
+      - name: Tofu plan
+        if: env.TOFU_ACTION == 'apply'
+        run: |
+          docker exec cloud-setup-tofu bash -c "
+            eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
+            tofu plan -out=tfplan
+          "
+
+      - name: Tofu plan (destroy)
+        if: env.TOFU_ACTION == 'destroy'
+        run: |
+          docker exec cloud-setup-tofu bash -c "
+            eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
+            tofu plan -destroy -out=tfplan
+          "
+
+      - name: Extract plan from container
+        run: docker cp cloud-setup-tofu:$WORKING_DIR/tfplan tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ inputs.step }}
+          path: tfplan
+
+      - name: Destroy ephemerals
+        if: always()
+        env:
+          STATE_KEY: ${{ steps.config.outputs.state_key }}
+        run: |
+          EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+          if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+            echo "[INFO] No ephemerals directory found, skipping."
+            exit 0
+          fi
+          EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+          docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
+            printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
+            tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+            tofu destroy -auto-approve
+            rm -f backend.tf
+          "
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f cloud-setup-tofu
+
+  apply-approved-plan:
+    name: Apply (${{ inputs.step }}, after manual approval)
+    if: inputs.action == 'apply' || inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    needs: [validate, plan]
+    environment: production
+    env:
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
+      TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
+      TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
+      TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
+      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Read state key
+        id: config
+        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+
+      - name: Build image
+        run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ inputs.step }}
+
+      - name: Write env file
+        run: printenv | grep -E '^(AWS_ACCESS_KEY_ID=|AWS_SECRET_ACCESS_KEY=|TF_VAR_)' | grep -v '=$' > /tmp/tofu.env
+
+      - name: Start container
+        run: |
+          docker run -d --name cloud-setup-tofu \
+            -w $WORKING_DIR \
+            --env-file /tmp/tofu.env \
+            cloud-setup-tofu sleep infinity
+
+      - name: Generate backend configuration
+        run: |
+          docker exec cloud-setup-tofu bash -c "
+            source ../../scripts/common.sh
+            generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
+          "
+
+      - name: Apply ephemerals
+        env:
+          STATE_KEY: ${{ steps.config.outputs.state_key }}
+        run: |
+          EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+          if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+            echo "[INFO] No ephemerals directory found, skipping."
+            exit 0
+          fi
+          EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+          docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
+            printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
+            tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+            tofu apply -auto-approve
+          "
+
+      - name: Tofu init
+        run: |
+          docker exec cloud-setup-tofu \
+            tofu init -backend-config ../backend.hcl \
+                      -backend-config="key=${{ steps.config.outputs.state_key }}"
+
+      - name: Inject plan into container
+        run: docker cp tfplan cloud-setup-tofu:$WORKING_DIR/tfplan
+
+      - name: Tofu apply
+        run: |
+          docker exec cloud-setup-tofu bash -c "
+            eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
+            tofu apply tfplan
+          "
+
+      - name: Destroy ephemerals
+        if: always()
+        env:
+          STATE_KEY: ${{ steps.config.outputs.state_key }}
+        run: |
+          EPHEMERALS_HOST_DIR="${GITHUB_WORKSPACE}${WORKING_DIR#/workspace}/ephemerals"
+          if [ ! -d "${EPHEMERALS_HOST_DIR}" ]; then
+            echo "[INFO] No ephemerals directory found, skipping."
+            exit 0
+          fi
+          EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
+          docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
+            printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
+            tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+            tofu destroy -auto-approve
+            rm -f backend.tf
+          "
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f cloud-setup-tofu
