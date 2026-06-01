@@ -57,8 +57,8 @@ runs:
         fi
         EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
         docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu-${{ github.run_id }} bash -c "
-          printf 'terraform { backend \"s3\" {} }\n' > backend.tf
-          tofu init -reconfigure -backend-config=../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
+          printf 'terraform {\n  backend "s3" {}\n}\n' > backend.tf
+          tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
           tofu apply -auto-approve
         "
 
@@ -95,6 +95,8 @@ runs:
         fi
         EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
         docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu-${{ github.run_id }} bash -c "
+          printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
+          tofu init -reconfigure -backend-config=../../backend.hcl -backend-config='key=${EPHEMERALS_STATE_KEY}'
           tofu destroy -auto-approve
           rm -f backend.tf
         "
