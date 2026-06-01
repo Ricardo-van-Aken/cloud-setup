@@ -19,6 +19,7 @@ FROM debian:bookworm-slim
 # curl: DO API calls in common.sh; coreutils: shred in common.sh; git: submodules in CI
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
+    ca-certificates \
     curl \
     git \
     jq \
