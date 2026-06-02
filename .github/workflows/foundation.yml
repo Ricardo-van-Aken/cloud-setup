@@ -224,15 +224,12 @@ jobs:
             exit 1
           "
 
-      - name: Debug — tofu show in log
-        run: docker exec cloud-setup-tofu tofu show tfplan
-
       - name: Show plan summary
         run: |
           {
             echo "## OpenTofu Plan — ${{ inputs.step }} (${{ env.TOFU_ACTION }})"
             echo ""
-            docker exec cloud-setup-tofu bash -c "script -qec 'tofu show tfplan' /dev/null | aha --no-header"
+            docker exec cloud-setup-tofu bash -c "tofu show tfplan | aha --no-header"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Extract plan from container
