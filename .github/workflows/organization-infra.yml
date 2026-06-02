@@ -1,18 +1,14 @@
-name: foundation
+name: organization-infra
 
 on:
   workflow_dispatch:
     inputs:
       step:
-        description: "Foundation step"
+        description: "Organization-infra module"
         required: true
         type: choice
         options:
-          - 01-digitalocean-remote-state
-          - 02-github-org-config
-          - 03-github-org-vars
-          - 04-github-repo
-          - 05-github-repo-vars
+          - github-projects-repository
       action:
         description: "Terraform action"
         required: true
@@ -29,16 +25,12 @@ env:
   TF_VAR_region: ${{ vars.DO_STATE_BUCKET_REGION }}
   TF_VAR_bucket_name: ${{ vars.DO_STATE_BUCKET_NAME }}
   TF_VAR_github_organization: ${{ vars._GITHUB_ORGANIZATION_NAME }}
-  TF_VAR_project_name: ${{ vars.DO_org_infra_PROJECT_NAME }}
-  TF_VAR_project_description: ${{ vars.DO_org_infra_PROJECT_DESCRIPTION }}
-  TF_VAR_project_purpose: ${{ vars.DO_org_infra_PROJECT_PURPOSE }}
-  TF_VAR_project_environment: ${{ vars.DO_org_infra_PROJECT_ENVIRONMENT }}
-  TF_VAR_repository_name: ${{ vars._GITHUB_org_infra_REPOSITORY_NAME }}
-  TF_VAR_repository_description: ${{ vars._GITHUB_org_infra_REPOSITORY_DESCRIPTION }}
-  TF_VAR_repository_visibility: ${{ vars._GITHUB_org_infra_REPOSITORY_VISIBILITY }}
-  TF_VAR_template_owner: ${{ vars._GITHUB_org_infra_TEMPLATE_OWNER }}
-  TF_VAR_template_repository: ${{ vars._GITHUB_org_infra_TEMPLATE_REPOSITORY }}
-  TF_VAR_is_template: ${{ vars._GITHUB_org_infra_IS_TEMPLATE }}
+  TF_VAR_repository_name: ${{ vars._GITHUB_projects_repository_REPOSITORY_NAME }}
+  TF_VAR_repository_description: ${{ vars._GITHUB_projects_repository_REPOSITORY_DESCRIPTION }}
+  TF_VAR_repository_visibility: ${{ vars._GITHUB_projects_repository_REPOSITORY_VISIBILITY }}
+  TF_VAR_template_owner: ${{ vars._GITHUB_projects_repository_TEMPLATE_OWNER }}
+  TF_VAR_template_repository: ${{ vars._GITHUB_projects_repository_TEMPLATE_REPOSITORY }}
+  TF_VAR_is_template: ${{ vars._GITHUB_projects_repository_IS_TEMPLATE }}
 
 jobs:
   check-ephemerals:
@@ -52,7 +44,7 @@ jobs:
       - name: Check for ephemerals directory
         id: check
         run: |
-          if [ -d "foundation/terraform/${{ inputs.step }}/ephemerals" ]; then
+          if [ -d "organization-infra/terraform/${{ inputs.step }}/ephemerals" ]; then
             echo "has_ephemerals=true" >> $GITHUB_OUTPUT
           else
             echo "has_ephemerals=false" >> $GITHUB_OUTPUT
@@ -66,7 +58,7 @@ jobs:
     env:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
-      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+      WORKING_DIR: /workspace/organization-infra/terraform/${{ inputs.step }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,7 +66,7 @@ jobs:
 
       - name: Read state dir
         id: config
-        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+        run: echo "state_key=$(cat organization-infra/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
 
       - name: Build image
         run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
@@ -92,7 +84,7 @@ jobs:
       - name: Generate backend configuration
         run: |
           docker exec cloud-setup-tofu bash -c "
-            source ../../scripts/common.sh
+            source ../../../foundation/scripts/common.sh
             generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
           "
 
@@ -125,7 +117,7 @@ jobs:
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
       TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
-      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+      WORKING_DIR: /workspace/organization-infra/terraform/${{ inputs.step }}
       TOFU_ACTION: ${{ (inputs.action == 'plan-apply' || inputs.action == 'apply') && 'apply' || (inputs.action == 'plan-destroy' || inputs.action == 'destroy') && 'destroy' }}
     steps:
       - uses: actions/checkout@v4
@@ -134,7 +126,7 @@ jobs:
 
       - name: Read state dir
         id: config
-        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+        run: echo "state_key=$(cat organization-infra/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
 
       - name: Build image
         run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
@@ -152,7 +144,7 @@ jobs:
       - name: Generate backend configuration
         run: |
           docker exec cloud-setup-tofu bash -c "
-            source ../../scripts/common.sh
+            source ../../../foundation/scripts/common.sh
             generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
           "
 
@@ -247,7 +239,7 @@ jobs:
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
       TF_VAR_github_org_token: ${{ secrets._GITHUB_ORG_TOKEN }}
       TF_VAR_github_repo_token: ${{ secrets._GITHUB_REPO_TOKEN }}
-      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+      WORKING_DIR: /workspace/organization-infra/terraform/${{ inputs.step }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -255,7 +247,7 @@ jobs:
 
       - name: Read state dir
         id: config
-        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+        run: echo "state_key=$(cat organization-infra/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
 
       - name: Build image
         run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
@@ -278,7 +270,7 @@ jobs:
       - name: Generate backend configuration
         run: |
           docker exec cloud-setup-tofu bash -c "
-            source ../../scripts/common.sh
+            source ../../../foundation/scripts/common.sh
             generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
           "
 
@@ -286,7 +278,7 @@ jobs:
         env:
           STATE_KEY: ${{ steps.config.outputs.state_key }}
         run: |
-          if [ ! -d "foundation/terraform/${{ inputs.step }}/ephemerals" ]; then exit 0; fi
+          if [ ! -d "organization-infra/terraform/${{ inputs.step }}/ephemerals" ]; then exit 0; fi
           EPHEMERALS_STATE_KEY="${STATE_KEY%/terraform.tfstate}/ephemerals.tfstate"
           docker exec -w "${WORKING_DIR}/ephemerals" cloud-setup-tofu bash -c "
             printf 'terraform {\n  backend \"s3\" {}\n}\n' > backend.tf
@@ -324,7 +316,7 @@ jobs:
     env:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_STATE_BUCKET_SECRET_KEY }}
       TF_VAR_do_org_infra_token: ${{ secrets.DO_ORG_INFRA_TOKEN }}
-      WORKING_DIR: /workspace/foundation/terraform/${{ inputs.step }}
+      WORKING_DIR: /workspace/organization-infra/terraform/${{ inputs.step }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -332,7 +324,7 @@ jobs:
 
       - name: Read state dir
         id: config
-        run: echo "state_key=$(cat foundation/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
+        run: echo "state_key=$(cat organization-infra/terraform/${{ inputs.step }}/.state-dir)/terraform.tfstate" >> $GITHUB_OUTPUT
 
       - name: Build image
         run: docker build -t cloud-setup-tofu $GITHUB_WORKSPACE
@@ -350,7 +342,7 @@ jobs:
       - name: Generate backend configuration
         run: |
           docker exec cloud-setup-tofu bash -c "
-            source ../../scripts/common.sh
+            source ../../../foundation/scripts/common.sh
             generate_backend_file \"\$TF_VAR_region\" \"\$TF_VAR_bucket_name\" '../backend.hcl'
           "
 

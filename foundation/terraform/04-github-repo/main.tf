@@ -47,21 +47,6 @@ resource "github_repository" "foundation" {
   }
 }
 
-# Create branches that correspond to environments
-resource "github_branch" "staging" {
-  repository    = var.repository_name
-  branch        = "staging"
-  source_branch = "main"
-}
-
-resource "github_branch" "production" {
-  repository    = var.repository_name
-  branch        = "production"
-  source_branch = "staging"
-  
-  depends_on = [github_branch.staging]
-}
-
 # Add team access to the repository
 resource "github_team_repository" "devops_gouda" {
   team_id    = data.terraform_remote_state.github-org-config.outputs.devops_gouda_team_id
@@ -69,16 +54,7 @@ resource "github_team_repository" "devops_gouda" {
   permission = "push"
 }
 
-# Create repository environments with team reviewers
-resource "github_repository_environment" "staging" {
-  repository  = var.repository_name
-  environment = "staging"
-
-  depends_on = [
-    github_team_repository.devops_gouda,
-  ]
-}
-
+# Create the production environment with team reviewers (used as the manual-approval gate by the foundation workflows)
 resource "github_repository_environment" "production" {
   repository  = var.repository_name
   environment = "production"
@@ -111,46 +87,4 @@ resource "github_branch_protection" "main" {
   }
 
   enforce_admins = false
-}
-
-# Branch protection for staging branch (basic protection)
-resource "github_branch_protection" "staging" {
-  repository_id = var.repository_name
-  pattern       = "staging"
-
-  required_pull_request_reviews {
-    required_approving_review_count = 1
-    dismiss_stale_reviews           = true
-    require_code_owner_reviews      = true
-  }
-
-  required_status_checks {
-    strict   = true
-    contexts = ["test"]
-  }
-
-  enforce_admins = false
-  
-  depends_on = [github_branch.staging]
-}
-
-# Branch protection for production branch (most restrictive - DevOps only)
-resource "github_branch_protection" "production" {
-  repository_id = var.repository_name
-  pattern       = "production"
-
-  required_pull_request_reviews {
-    required_approving_review_count = 1
-    dismiss_stale_reviews           = true
-    require_code_owner_reviews      = true
-  }
-
-  required_status_checks {
-    strict   = true
-    contexts = ["test"]
-  }
-
-  enforce_admins = false
-  
-  depends_on = [github_branch.production]
 }
