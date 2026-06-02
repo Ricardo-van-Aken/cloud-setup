@@ -229,8 +229,8 @@ jobs:
           {
             echo "## OpenTofu Plan — ${{ inputs.step }} (${{ env.TOFU_ACTION }})"
             echo ""
-            echo '```'
-            docker exec cloud-setup-tofu tofu show tfplan
+            echo '```diff'
+            docker exec cloud-setup-tofu tofu show -no-color tfplan | sed -E 's/^([[:space:]]*)([+~!-])/\2\1/'
             echo '```'
           } >> $GITHUB_STEP_SUMMARY
 
