@@ -14,6 +14,14 @@ provider "github" {
   owner = var.github_organization
 }
 
+# Temporary: keeps orphaned `github_actions_secret.github_repo_vars_token` in state addressable
+# so tofu can destroy it on the next apply. Remove this alias once that resource is gone from state.
+provider "github" {
+  alias = "repo_vars"
+  token = var.github_repo_token
+  owner = var.github_organization
+}
+
 data "terraform_remote_state" "do-remote-state" {
   backend = "s3"
   config = {
