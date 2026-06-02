@@ -201,7 +201,7 @@ jobs:
             set +e
             for attempt in 1 2 3 4 5; do
               echo \"Plan attempt \$attempt using spaces_access_id=\${TF_VAR_spaces_access_id:0:6}...\"
-              tofu plan -out=tfplan && exit 0
+              script -qec 'tofu plan -out=tfplan' /tmp/plan.ansi && exit 0
               [ \$attempt -lt 5 ] && echo \"Plan attempt \$attempt failed (possibly Spaces key propagation delay), retrying in 30s...\" && sleep 30
             done
             exit 1
@@ -218,7 +218,7 @@ jobs:
             set +e
             for attempt in 1 2 3 4 5; do
               echo \"Plan attempt \$attempt using spaces_access_id=\${TF_VAR_spaces_access_id:0:6}...\"
-              tofu plan -destroy -out=tfplan && exit 0
+              script -qec 'tofu plan -destroy -out=tfplan' /tmp/plan.ansi && exit 0
               [ \$attempt -lt 5 ] && echo \"Plan attempt \$attempt failed (possibly Spaces key propagation delay), retrying in 30s...\" && sleep 30
             done
             exit 1
@@ -229,7 +229,7 @@ jobs:
           {
             echo "## OpenTofu Plan — ${{ inputs.step }} (${{ env.TOFU_ACTION }})"
             echo ""
-            docker exec cloud-setup-tofu bash -c "script -qec 'tofu show tfplan' /dev/null | aha --no-header"
+            docker exec cloud-setup-tofu bash -c "cat /tmp/plan.ansi | aha --no-header"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Extract plan from container
