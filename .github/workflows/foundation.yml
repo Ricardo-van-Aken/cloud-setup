@@ -226,19 +226,13 @@ jobs:
 
       - name: Show plan summary
         run: |
-          docker exec cloud-setup-tofu bash -c "tofu show tfplan | ansifilter -F SVG" > plan.svg
-          SVG_B64=$(base64 -w 0 plan.svg)
           {
             echo "## OpenTofu Plan — ${{ inputs.step }} (${{ env.TOFU_ACTION }})"
             echo ""
-            echo "<img src=\"data:image/svg+xml;base64,$SVG_B64\" alt=\"OpenTofu Plan\">"
+            echo '```'
+            docker exec cloud-setup-tofu tofu show -no-color tfplan
+            echo '```'
           } >> $GITHUB_STEP_SUMMARY
-
-      - name: Upload plan SVG
-        uses: actions/upload-artifact@v4
-        with:
-          name: tofu-plan-svg-${{ inputs.step }}
-          path: plan.svg
 
       - name: Extract plan from container
         run: docker cp cloud-setup-tofu:$WORKING_DIR/tfplan tfplan
