@@ -17,7 +17,7 @@ RUN curl -fsSLo /tmp/tofu.zip \
 FROM debian:bookworm-slim
 
 # curl: DO API calls in common.sh; coreutils: shred in common.sh; git: submodules in CI;
-# aha: convert tofu's ANSI-colored plan output to HTML for GitHub Step Summary
+# ansifilter: convert tofu's ANSI-colored plan output to SVG for GitHub Step Summary
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     jq \
     coreutils \
-    aha \
+    ansifilter \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/bin/tofu /usr/local/bin/tofu
