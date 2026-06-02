@@ -228,7 +228,9 @@ jobs:
   apply-approved-plan:
     name: Apply (${{ inputs.step }}, after manual approval)
     if: |
+      always() &&
       (inputs.action == 'apply' || inputs.action == 'destroy') &&
+      needs.validate.result == 'success' &&
       needs.plan.result == 'success'
     runs-on: ubuntu-latest
     needs: [validate, plan]
