@@ -198,7 +198,13 @@ jobs:
             if [ -d ./ephemerals ]; then
               eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
             fi
-            tofu plan -out=tfplan
+            set +e
+            for attempt in 1 2 3 4 5; do
+              echo \"Plan attempt \$attempt using spaces_access_id=\${TF_VAR_spaces_access_id:0:6}...\"
+              tofu plan -out=tfplan && exit 0
+              [ \$attempt -lt 5 ] && echo \"Plan attempt \$attempt failed (possibly Spaces key propagation delay), retrying in 30s...\" && sleep 30
+            done
+            exit 1
           "
 
       - name: Tofu plan (destroy)
@@ -209,7 +215,13 @@ jobs:
             if [ -d ./ephemerals ]; then
               eval \"\$(tofu -chdir=./ephemerals output -json | jq -r 'to_entries[] | \"export TF_VAR_\(.key)=\(.value.value | @sh)\"')\"
             fi
-            tofu plan -destroy -out=tfplan
+            set +e
+            for attempt in 1 2 3 4 5; do
+              echo \"Plan attempt \$attempt using spaces_access_id=\${TF_VAR_spaces_access_id:0:6}...\"
+              tofu plan -destroy -out=tfplan && exit 0
+              [ \$attempt -lt 5 ] && echo \"Plan attempt \$attempt failed (possibly Spaces key propagation delay), retrying in 30s...\" && sleep 30
+            done
+            exit 1
           "
 
       - name: Extract plan from container
